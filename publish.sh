@@ -12,17 +12,17 @@ sed -i.bak "s/version=.*/version='${VERSION}',/" setup.py
 # remove setup.py.bak
 rm "setup.py.bak"
 
-# Write the following text out to bicameralism/__init__.py to replace the current (without the comments)
-cat << EOF > bicameralism/__init__.py
+# Write the following text out to easycompletion/__init__.py to replace the current (without the comments)
+cat << EOF > easycompletion/__init__.py
 """
-bicameralism
+easycompletion
 
 Leveraging conversational AI for bicameral decision making.
 """
 
 __version__ = "${VERSION}"
 __author__ = 'Moon (https://github.com/lalalune)'
-__credits__ = 'https://github.com/lalalune/bicameralism'
+__credits__ = 'https://github.com/lalalune/easycompletion'
 EOF
 
 # Check if these dependencies are installed, and install them if they aren't
@@ -37,14 +37,14 @@ python setup.py bdist_wheel --universal || { echo "Wheel build failed"; exit 1; 
 
 # Make sure these work, and stop the script if they error
 # Upload to test repo
-twine upload dist/bicameralism-${VERSION}.tar.gz --repository-url https://test.pypi.org/legacy/ || { echo "Upload to test repo failed"; exit 1; }
-pip install --index-url https://test.pypi.org/simple/ bicameralism --user || { echo "Installation from test repo failed"; exit 1; }
+twine upload dist/easycompletion-${VERSION}.tar.gz --repository-url https://test.pypi.org/legacy/ || { echo "Upload to test repo failed"; exit 1; }
+pip install --index-url https://test.pypi.org/simple/ easycompletion --user || { echo "Installation from test repo failed"; exit 1; }
 
 # Final upload
-twine upload dist/bicameralism-${VERSION}.tar.gz || { echo "Final upload failed"; exit 1; }
-pip install bicameralism --user || { echo "Installation of bicameralism failed"; exit 1; }
+twine upload dist/easycompletion-${VERSION}.tar.gz || { echo "Final upload failed"; exit 1; }
+pip install easycompletion --user || { echo "Installation of easycompletion failed"; exit 1; }
 
-git add bicameralism/__init__.py
+git add easycompletion/__init__.py
 git add setup.py
 git commit -m "Updated to ${VERSION} and published"
 git push origin main
