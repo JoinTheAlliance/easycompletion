@@ -11,6 +11,7 @@ sed -i.bak "s/version=.*/version='${VERSION}',/" setup.py
 
 # remove setup.py.bak
 rm "setup.py.bak"
+rm easycompletion/__init__.py.bak
 
 # Read easycompletion/__init__.py, find the line that starts with __version__ and replace with '__version__ = "${VERSION}"'
 sed -i.bak "s/__version__.*/__version__ = \"${VERSION}\"/" easycompletion/__init__.py
