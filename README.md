@@ -90,4 +90,4 @@ If you like this library and want to contribute in any way, please feel free to 
 
 # Questions, Comments, Concerns
 
-If you have any questions, please feel free to reach out to me on [Twitter](https://twitter.com/spatialweeb) or [Discord](@new.moon).
+If you have any questions, please feel free to reach out to me on [Twitter](https://twitter.com/spatialweeb) or Discord @new.moon
