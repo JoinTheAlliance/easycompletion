@@ -12,18 +12,9 @@ sed -i.bak "s/version=.*/version='${VERSION}',/" setup.py
 # remove setup.py.bak
 rm "setup.py.bak"
 
-# Write the following text out to easycompletion/__init__.py to replace the current (without the comments)
-cat << EOF > easycompletion/__init__.py
-"""
-easycompletion
+# Read easycompletion/__init__.py, find the line that starts with __version__ and replace with '__version__ = "${VERSION}"'
+sed -i.bak "s/__version__.*/__version__ = \"${VERSION}\"/" easycompletion/__init__.py
 
-Leveraging conversational AI for bicameral decision making.
-"""
-
-__version__ = "${VERSION}"
-__author__ = 'Moon (https://github.com/lalalune)'
-__credits__ = 'https://github.com/lalalune/easycompletion'
-EOF
 
 # Check if these dependencies are installed, and install them if they aren't
 pip install twine || echo "Failed to install twine"
