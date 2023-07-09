@@ -4,6 +4,10 @@ import re
 import json
 import ast
 
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.
+
 from easycompletion.constants import (
     default_text_model,
     long_text_model,

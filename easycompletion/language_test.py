@@ -1,4 +1,10 @@
-from language import parse_arguments, openai_function_call, openai_text_call, compose_prompt
+from language import (
+    parse_arguments,
+    openai_function_call,
+    openai_text_call,
+    compose_prompt,
+    compose_function,
+)
 
 test_text = "Write a song about AI"
 test_function = {
@@ -28,6 +34,38 @@ test_dict = {"object": "towel"}
 prompt = compose_prompt(test_prompt, test_dict)
 
 assert prompt == "I am a towel", "Test compose_prompt failed"
+
+summarization_function = {
+    "name": "summarize_text",
+    "description": "Summarize the text. Include the topic, subtopics.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "summary": {
+                "type": "string",
+                "description": "Detailed summary of the text.",
+            },
+        },
+        "required": ["summary"],
+    },
+}
+
+# rewrittten with compose_function
+composed_summarization_function = compose_function(
+    name="summarize_text",
+    description="Summarize the text. Include the topic, subtopics.",
+    properties={
+        "summary": {
+            "type": "string",
+            "description": "Detailed summary of the text.",
+        },
+    },
+    required_property_names=["summary"],
+)
+
+assert (
+    composed_summarization_function == summarization_function
+), "Test compose_function failed"
 
 response = openai_function_call(
     text=test_text, functions=test_function, function_call="write_song"
