@@ -4,7 +4,7 @@ import re
 import json
 import ast
 
-from constants import (
+from easycompletion.constants import (
     default_text_model,
     long_text_model,
     openai_api_key,
@@ -79,6 +79,34 @@ def validate_functions(response, functions, function_call):
 
     return False
 
+def compose_function(name, description, properties, required_property_names):
+    """
+    Composes a function.
+    properties is a dictionary of property objects, with the property name as the key
+    property object types are discussed here: https://openai.com/blog/function-calling-and-other-api-updates
+    required_property_names is a list of property names that are required for the model to return
+    example usage:
+    summarization_function = compose_function(
+        name="summarize_text",
+        description="Summarize the text. Include the topic, subtopics.",
+        properties={
+            "summary": {
+                "type": "string",
+                "description": "Detailed summary of the text.",
+            },
+        },
+        required_property_names=["summary"],
+    )
+    """
+    return {
+        "name": name,
+        "description": description,
+        "parameters": {
+            "type": "object",
+            "properties": properties,
+            "required": required_property_names,
+        },
+    }
 
 def compose_prompt(prompt_template, parameters):
     """
