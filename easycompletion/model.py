@@ -219,6 +219,7 @@ def openai_text_call(text, model_failure_retries=5, model=None, chunk_length=def
 
     return content
 
+
 def openai_function_call(
     text,
     functions=None,
