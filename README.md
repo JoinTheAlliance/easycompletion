@@ -1,6 +1,6 @@
 # easycompletion
 
-Easy function calling using OpenAI's API. Handles a lot of the annoying boilerplate. Useful if you want a clean, validated response. Simple codebase, made after many hours of frustration with the various pitfalls and instabilities of the OpenAI API.
+Easy text completion and function calling using the OpenAI API. Also includes useful utilities for counting tokens, composing prompts and trimming them to fit within the token limit.
 
 <img src="resources/image.jpg">
 
