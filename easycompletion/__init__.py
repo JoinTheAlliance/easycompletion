@@ -4,7 +4,7 @@ easycompletion
 Leveraging conversational AI for bicameral decision making.
 """
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 __author__ = "Moon (https://github.com/lalalune)"
 __credits__ = "https://github.com/lalalune/easycompletion"
 
