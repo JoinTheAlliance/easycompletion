@@ -11,3 +11,5 @@ if long_text_model == None or long_text_model == "":
     long_text_model = "gpt-3.5-turbo-16k"
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
+
+default_chunk_length = 4096 * 3 / 4 # 3/4ths of the context window size
