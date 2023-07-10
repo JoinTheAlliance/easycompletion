@@ -19,6 +19,7 @@ from easycompletion import openai_function_call, openai_text_call, compose_promp
 ```
 
 ## Quickstart
+
 ```python
 from easycompletion import openai_function_call, openai_text_call, compose_prompt
 
@@ -66,6 +67,7 @@ response = openai_text_call("Hello, how are you?")
 ```
 
 ## Compose a Function
+
 ```python
 
 Composes a function object for OpenAI API.
@@ -98,22 +100,6 @@ print(response["arguments"]["lyrics"])
 ```
 
 # Advanced Usage
-
-### `parse_arguments(arguments)`
-
-Parses arguments that are expected to be either a JSON string, dictionary, or a list.
-
-```python
-arguments = parse_arguments('{"arg1": "value1", "arg2": "value2"}')
-```
-
-### `validate_functions(response, functions, function_call)`
-
-Validates if the function returned by the OpenAI API matches the intended function call.
-
-```python
-isValid = validate_functions(response, functions, function_call)
-```
 
 ### `compose_function(name, description, properties, required_properties)`
 
