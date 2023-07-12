@@ -21,7 +21,7 @@ setup(
     author_email="shawmakesmagic@gmail.com",
     license="MIT",
     packages=["easycompletion"],
-    install_requires=["openai", "tiktoken", "dotenv"],
+    install_requires=["openai", "tiktoken", "python-dotenv"],
     readme="README.md",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
