@@ -1,10 +1,10 @@
-from model import (
+from easycompletion.model import (
     parse_arguments,
     openai_function_call,
     openai_text_call,
     compose_function,
 )
-from prompt import (
+from easycompletion.prompt import (
     compose_prompt,
     trim_prompt,
     chunk_prompt,
@@ -68,7 +68,9 @@ def test_compose_function():
         },
         required_properties=["summary"],
     )
-    assert composed_summarization_function == summarization_function, "Test compose_function failed"
+    assert (
+        composed_summarization_function == summarization_function
+    ), "Test compose_function failed"
 
 
 def test_openai_function_call():
@@ -118,9 +120,7 @@ def test_long_call():
             "required": ["summary"],
         },
     }
-    response = openai_function_call(
-        text=script, functions=summarization_function
-    )
+    response = openai_function_call(text=script, functions=summarization_function)
     assert response is not None, "Test long_call failed"
 
 

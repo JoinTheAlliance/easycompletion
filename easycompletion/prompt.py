@@ -1,7 +1,7 @@
 import re
 import tiktoken
 
-from easycompletion.constants import (
+from .constants import (
     default_text_model,
     default_chunk_length,
 )

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python3 easycompletion/test.py
+python3 test.py

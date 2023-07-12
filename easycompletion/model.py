@@ -6,16 +6,16 @@ import ast
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()  
+load_dotenv()
 
-from constants import (
+from .constants import (
     default_text_model,
     long_text_model,
     openai_api_key,
     default_chunk_length,
 )
 
-from prompt import count_tokens
+from .prompt import count_tokens
 
 # Set the OpenAI API key
 openai.api_key = openai_api_key
@@ -27,10 +27,10 @@ def parse_arguments(arguments):
 
     Parameters:
         arguments (str or dict or list): Arguments in string or dictionary or list format.
-    
+
     Returns:
         A dictionary or list of arguments if arguments are valid, None otherwise.
-        
+
     Usage:
         arguments = parse_arguments('{"arg1": "value1", "arg2": "value2"}')
     """
@@ -71,7 +71,7 @@ def validate_functions(response, functions, function_call):
 
     Returns:
         True if function call matches with the response, False otherwise.
-        
+
     Usage:
         isValid = validate_functions(response, functions, function_call)
     """
@@ -152,7 +152,13 @@ def compose_function(name, description, properties, required_properties):
     }
 
 
-def openai_text_call(text, model_failure_retries=5, model=None, chunk_length=default_chunk_length, api_key=None):
+def openai_text_call(
+    text,
+    model_failure_retries=5,
+    model=None,
+    chunk_length=default_chunk_length,
+    api_key=None,
+):
     """
     Function for sending text to the OpenAI API and returning a text response.
 
@@ -169,7 +175,7 @@ def openai_text_call(text, model_failure_retries=5, model=None, chunk_length=def
     Example:
         >>> openai_text_call("Hello, how are you?", model_failure_retries=3, model='gpt-3.5-turbo', chunk_length=1024, api_key='your_openai_api_key')
     """
-    
+
     # Override the API key if provided as parameter
     if api_key is not None:
         openai.api_key = api_key
@@ -209,7 +215,11 @@ def openai_text_call(text, model_failure_retries=5, model=None, chunk_length=def
             break
 
     # If response is not valid, print an error message and return None
-    if response is None or response["choices"] is None or response["choices"][0] is None:
+    if (
+        response is None
+        or response["choices"] is None
+        or response["choices"][0] is None
+    ):
         print("Error: Could not get a successful response from OpenAI API")
         return None
 
@@ -246,7 +256,7 @@ def openai_function_call(
         api_key (str | None): If you'd like to pass in a key to override the environment variable OPENAI_API_KEY.
 
     Returns:
-        dict: On most errors, returns a dictionary with an "error" key. On success, returns a dictionary containing 
+        dict: On most errors, returns a dictionary with an "error" key. On success, returns a dictionary containing
         "text" (response from the model), "function_name" (name of the function called), "arguments" (arguments for the function), "error" (None).
 
     Example:
@@ -273,7 +283,9 @@ def openai_function_call(
             functions = [functions]
         else:
             # Functions must be either a list of dictionaries or a single dictionary
-            return {"error": "functions must be a list of functions or a single function"}
+            return {
+                "error": "functions must be a list of functions or a single function"
+            }
 
     # Set the function call to the name of the function if only one function is provided
     # If there are multiple functions, use "auto"
@@ -289,7 +301,9 @@ def openai_function_call(
         if isinstance(function_call, str):
             function_call = {"name": function_call}
         elif "name" not in function_call:
-            return {"error": "function_call had an invalid name. Should be a string of the function name or an object with a name property"}
+            return {
+                "error": "function_call had an invalid name. Should be a string of the function name or an object with a name property"
+            }
 
     # Use the default text model if no model is specified
     if model is None:
@@ -346,7 +360,11 @@ def openai_function_call(
             break
 
     # Check if we have a valid response from OpenAI API
-    if response is None or not response.get("choices") or response["choices"][0] is None:
+    if (
+        response is None
+        or not response.get("choices")
+        or response["choices"][0] is None
+    ):
         error = "Could not get a successful response from OpenAI API"
         print(error)
         return {"error": error}
