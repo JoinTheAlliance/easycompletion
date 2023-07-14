@@ -10,15 +10,7 @@ Easy text completion and function calling using the OpenAI API. Also includes us
 pip install easycompletion
 ```
 
-# Usage
-
-## Importing
-
-```python
-from easycompletion import openai_function_call, openai_text_call, compose_prompt
-```
-
-## Quickstart
+# Quickstart
 
 ```python
 from easycompletion import openai_function_call, openai_text_call, compose_prompt
@@ -63,14 +55,15 @@ Send text, get a response as a text string
 ```python
 from easycompletion import openai_text_call
 response = openai_text_call("Hello, how are you?")
-# response = "As an AI language model, I don't have feelings, but...""
+# response["text"] = "As an AI language model, I don't have feelings, but...""
 ```
 
 ## Compose a Function
 
-```python
+Compose a function to pass into the function calling API
 
-Composes a function object for OpenAI API.
+```python
+from easycompletion import compose_function
 
 test_function = compose_function(
     name="write_song",
@@ -92,7 +85,7 @@ Send text and a list of functions and get a response as a function call
 ```python
 from easycompletion import openai_function_call, compose_function
 
-# test_function is a function object created using compose_function in the example above...
+# NOTE: test_function is a function object created using compose_function in the example above...
 
 response = openai_function_call(text="Write a song about AI", functions=[test_function], function_call="write_song")
 # Response structure is { "text": string, "function_name": string, "arguments": dict  }
@@ -133,6 +126,21 @@ response = openai_text_call(
 )
 ```
 
+The response object looks like this:
+
+```json
+{
+    "text": "string",
+    "usage": {
+        "prompt_tokens": "number",
+        "completion_tokens": "number",
+        "total_tokens": "number"
+    },
+    "error": "string|None",
+    "finish_reason": "string"
+}
+```
+
 ### `openai_function_call(text, functions=None, model_failure_retries=5, function_call=None, function_failure_retries=10, chunk_length=default_chunk_length, model=None, api_key=None)`
 
 Sends text and a list of functions to the OpenAI API and returns optional text and a function call. The function call is validated against the functions array.
@@ -144,6 +152,23 @@ function = {
 }
 
 response = openai_function_call("Call the function.", function)
+```
+
+The response object looks like this:
+
+```json
+{
+    "text": "string",
+    "function_name": "string",
+    "arguments": "dict",
+    "usage": {
+        "prompt_tokens": "number",
+        "completion_tokens": "number",
+        "total_tokens": "number"
+    },
+    "finish_reason": "string",
+    "error": "string|None"
+}
 ```
 
 ### `trim_prompt(text, max_tokens=default_chunk_length, model=default_text_model, preserve_top=True)`

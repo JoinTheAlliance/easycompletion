@@ -93,11 +93,16 @@ def test_openai_function_call():
         text=test_text, functions=test_function, function_call="write_song"
     )
     assert response is not None, "Test openai_function_call failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 64, "Prompt tokens was not expected count"
 
 
 def test_openai_text_call():
     response = openai_text_call("Hello, how are you?")
     assert response is not None, "Test openai_text_call failed"
+    assert response["text"] is not None, "Test openai_text_call failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 13, "Prompt tokens was not expected count"
 
 
 def test_long_call():

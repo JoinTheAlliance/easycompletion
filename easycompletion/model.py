@@ -1,3 +1,4 @@
+import time
 import openai
 import re
 import json
@@ -195,7 +196,12 @@ def openai_text_call(
     # If text is too long even for long text model, return None
     if total_tokens > (16384 - chunk_length):
         print("Error: Message too long")
-        return None
+        return {
+            "text": None,
+            usage: None,
+            "finish_reason": None,
+            "error": "Message too long",
+        }
 
     # Prepare messages for the API call
     messages = [{"role": "user", "content": text}]
@@ -213,6 +219,8 @@ def openai_text_call(
         response = try_request()
         if response:
             break
+        # wait 1 second
+        time.sleep(1)
 
     # If response is not valid, print an error message and return None
     if (
@@ -220,14 +228,24 @@ def openai_text_call(
         or response["choices"] is None
         or response["choices"][0] is None
     ):
-        print("Error: Could not get a successful response from OpenAI API")
-        return None
+        return {
+            "text": None,
+            usage: None,
+            "finish_reason": None,
+            "error": "Error: Could not get a successful response from OpenAI API",
+        }
 
     # Extract content from the response
-    response_data = response["choices"][0]["message"]
-    content = response_data["content"]
+    text = response["choices"][0]["message"]["content"]
+    finish_reason = response["choices"][0]["finish_reason"]
+    usage = response["usage"]
 
-    return content
+    return {
+        "text": text,
+        "usage": usage,
+        "finish_reason": finish_reason,
+        "error": None,
+    }
 
 
 def openai_function_call(
@@ -371,7 +389,10 @@ def openai_function_call(
 
     # Extracting the content and function call response from API response
     response_data = response["choices"][0]["message"]
-    content = response_data["content"]
+    finish_reason = response["choices"][0]["finish_reason"]
+    usage = response["usage"]
+
+    text = response_data["content"]
     function_call_response = response_data.get("function_call", None)
 
     # If no function call in response, return an error
@@ -380,8 +401,10 @@ def openai_function_call(
 
     # Return the final result with the text response, function name, arguments and no error
     return {
-        "text": content,
+        "text": text,
         "function_name": function_call_response["name"],
         "arguments": parse_arguments(function_call_response["arguments"]),
+        "usage": usage,
+        "finish_reason": finish_reason,
         "error": None,
     }
