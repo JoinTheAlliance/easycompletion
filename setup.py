@@ -12,7 +12,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="easycompletion",
-    version='0.2.1',
+    version='0.2.2',
     description="Easy text completion and function calling using the OpenAI API. Also includes useful utilities for counting tokens, composing prompts and trimming them to fit within the token limit.",
     long_description=long_description,  # added this line
     long_description_content_type="text/markdown",  # and this line
