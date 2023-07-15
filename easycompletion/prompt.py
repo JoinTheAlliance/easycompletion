@@ -1,5 +1,6 @@
 import re
 import tiktoken
+import sys
 
 from .constants import (
     default_text_model,
@@ -146,10 +147,18 @@ def compose_prompt(prompt_template, parameters):
     for key, value in parameters.items():
         if isinstance(value, str):
             prompt = prompt.replace("{{" + key + "}}", value)
+        elif isinstance(value, int):
+            prompt = prompt.replace("{{" + key + "}}", str(value))
         elif isinstance(value, dict):
             for k, v in value.items():
                 prompt = prompt.replace("{{" + key + "}}", k + "::" + v)
         elif isinstance(value, list):
             for item in value:
                 prompt = prompt.replace("{{" + key + "}}", item + "\n")
+        elif value is None:
+            prompt = prompt.replace("{{" + key + "}}", "None")
+        else:
+            print("ERROR PARSING")
+            sys.exit(1)
+
     return prompt
