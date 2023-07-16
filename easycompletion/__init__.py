@@ -1,13 +1,3 @@
-"""
-easycompletion
-
-Leveraging conversational AI for bicameral decision making.
-"""
-
-__version__ = "0.2.2"
-__author__ = "Moon (https://github.com/AutonomousResearchGroup)"
-__credits__ = "https://github.com/AutonomousResearchGroup/easycompletion"
-
 from .model import (
     openai_function_call,
     openai_text_call,
