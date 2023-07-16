@@ -127,15 +127,3 @@ def test_long_call():
     }
     response = openai_function_call(text=script, functions=summarization_function)
     assert response is not None, "Test long_call failed"
-
-
-if __name__ == "__main__":
-    test_chunk_prompt()
-    test_trim_prompt_and_get_tokens()
-    test_parse_arguments()
-    test_compose_prompt()
-    test_compose_function()
-    test_openai_function_call()
-    test_openai_text_call()
-    test_long_call()
-    print("All tests passed!")
