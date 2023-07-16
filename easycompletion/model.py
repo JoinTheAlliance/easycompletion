@@ -1,3 +1,4 @@
+import os
 import time
 import openai
 import re
@@ -191,7 +192,8 @@ def openai_text_call(
     # If text is longer than chunk_length and model is not for long texts, switch to the long text model
     if total_tokens > chunk_length and "16k" not in model:
         model = long_text_model
-        print("Warning: Message is long. Using 16k model")
+        if not os.environ.get("SUPPRESS_WARNINGS"):
+            print("Warning: Message is long. Using 16k model (to hide this message, set SUPPRESS_WARNINGS=1)")
 
     # If text is too long even for long text model, return None
     if total_tokens > (16384 - chunk_length):
@@ -338,7 +340,8 @@ def openai_function_call(
     # Switch to a larger model if the message is too long for the default model
     if total_tokens > chunk_length and "16k" not in model:
         model = long_text_model
-        print("Warning: Message is long. Using 16k model")
+        if not os.environ.get("SUPPRESS_WARNINGS"):
+            print("Warning: Message is long. Using 16k model (to hide this message, set SUPPRESS_WARNINGS=1)")
 
     # Check if the total number of tokens exceeds the maximum allowable tokens for the model
     if total_tokens > (16384 - chunk_length):
