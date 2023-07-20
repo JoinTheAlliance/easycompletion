@@ -77,8 +77,11 @@ def validate_functions(response, functions, function_call):
     Usage:
         isValid = validate_functions(response, functions, function_call)
     """
-    # Extract the function call from the response
-    response_function_call = response["choices"][0]["message"]["function_call"]
+    response_function_call = response["choices"][0]["message"].get(
+        "function_call", None
+    )
+    if response_function_call is None:
+        return False
 
     # If function_call is not "auto" and the name does not match with the response, return False
     if (
@@ -193,7 +196,9 @@ def openai_text_call(
     if total_tokens > chunk_length and "16k" not in model:
         model = long_text_model
         if not os.environ.get("SUPPRESS_WARNINGS"):
-            print("Warning: Message is long. Using 16k model (to hide this message, set SUPPRESS_WARNINGS=1)")
+            print(
+                "Warning: Message is long. Using 16k model (to hide this message, set SUPPRESS_WARNINGS=1)"
+            )
 
     # If text is too long even for long text model, return None
     if total_tokens > (16384 - chunk_length):
@@ -341,7 +346,9 @@ def openai_function_call(
     if total_tokens > chunk_length and "16k" not in model:
         model = long_text_model
         if not os.environ.get("SUPPRESS_WARNINGS"):
-            print("Warning: Message is long. Using 16k model (to hide this message, set SUPPRESS_WARNINGS=1)")
+            print(
+                "Warning: Message is long. Using 16k model (to hide this message, set SUPPRESS_WARNINGS=1)"
+            )
 
     # Check if the total number of tokens exceeds the maximum allowable tokens for the model
     if total_tokens > (16384 - chunk_length):
