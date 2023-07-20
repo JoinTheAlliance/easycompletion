@@ -145,20 +145,26 @@ def compose_prompt(prompt_template, parameters):
 
     # Replacing placeholders in the template with the actual values from the parameters.
     for key, value in parameters.items():
-        if isinstance(value, str):
-            prompt = prompt.replace("{{" + key + "}}", value)
-        elif isinstance(value, int):
-            prompt = prompt.replace("{{" + key + "}}", str(value))
-        elif isinstance(value, dict):
-            for k, v in value.items():
-                prompt = prompt.replace("{{" + key + "}}", k + "::" + v)
-        elif isinstance(value, list):
-            for item in value:
-                prompt = prompt.replace("{{" + key + "}}", item + "\n")
-        elif value is None:
-            prompt = prompt.replace("{{" + key + "}}", "None")
-        else:
-            print("ERROR PARSING")
-            sys.exit(1)
+            # check if "{{" + key + "}}" is in prompt
+            # if not, continue
+            if "{{" + key + "}}" not in prompt:
+                continue
+            try:
+                if isinstance(value, str):
+                    prompt = prompt.replace("{{" + key + "}}", value)
+                elif isinstance(value, int):
+                    prompt = prompt.replace("{{" + key + "}}", str(value))
+                elif isinstance(value, dict):
+                    for k, v in value.items():
+                        prompt = prompt.replace("{{" + key + "}}", k + "::" + v)
+                elif isinstance(value, list):
+                    for item in value:
+                        prompt = prompt.replace("{{" + key + "}}", item + "\n")
+                elif value is None:
+                    prompt = prompt.replace("{{" + key + "}}", "None")
+                else:
+                    raise Exception(f"ERROR PARSING:\n{key}\n{value}")
+            except:
+                raise Exception(f"ERROR PARSING:\n{key}\n{value}")
 
     return prompt
