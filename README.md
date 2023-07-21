@@ -112,7 +112,7 @@ summarization_function = compose_function(
 )
 ```
 
-### `openai_text_call(text, model_failure_retries=5, model=None, chunk_length=default_chunk_length, api_key=None)`
+### `openai_text_call(text, model_failure_retries=5, model=None, chunk_length=DEFAULT_CHUNK_LENGTH, api_key=None)`
 
 Sends text to the OpenAI API and returns a text response.
 
@@ -141,7 +141,7 @@ The response object looks like this:
 }
 ```
 
-### `openai_function_call(text, functions=None, model_failure_retries=5, function_call=None, function_failure_retries=10, chunk_length=default_chunk_length, model=None, api_key=None)`
+### `openai_function_call(text, functions=None, model_failure_retries=5, function_call=None, function_failure_retries=10, chunk_length=DEFAULT_CHUNK_LENGTH, model=None, api_key=None)`
 
 Sends text and a list of functions to the OpenAI API and returns optional text and a function call. The function call is validated against the functions array.
 
@@ -171,7 +171,7 @@ The response object looks like this:
 }
 ```
 
-### `trim_prompt(text, max_tokens=default_chunk_length, model=default_text_model, preserve_top=True)`
+### `trim_prompt(text, max_tokens=DEFAULT_CHUNK_LENGTH, model=DEFAULT_TEXT_MODEL, preserve_top=True)`
 
 Trim the given text to a maximum number of tokens.
 
@@ -179,7 +179,7 @@ Trim the given text to a maximum number of tokens.
 trimmed_text = trim_prompt("This is a test.", 3, preserve_top=True)
 ```
 
-### `chunk_prompt(prompt, chunk_length=default_chunk_length)`
+### `chunk_prompt(prompt, chunk_length=DEFAULT_CHUNK_LENGTH)`
 
 Split the given prompt into chunks where each chunk has a maximum number of tokens.
 
@@ -187,7 +187,7 @@ Split the given prompt into chunks where each chunk has a maximum number of toke
 prompt_chunks = chunk_prompt("This is a test. I am writing a function.", 4)
 ```
 
-### `count_tokens(prompt, model=default_text_model)`
+### `count_tokens(prompt, model=DEFAULT_TEXT_MODEL)`
 
 Count the number of tokens in a string.
 
@@ -195,7 +195,7 @@ Count the number of tokens in a string.
 num_tokens = count_tokens("This is a test.")
 ```
 
-### `get_tokens(prompt, model=default_text_model)`
+### `get_tokens(prompt, model=DEFAULT_TEXT_MODEL)`
 
 Returns a list of tokens in a string.
 

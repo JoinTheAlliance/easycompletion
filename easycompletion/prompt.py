@@ -1,15 +1,15 @@
 import re
 import tiktoken
-import sys
 
-from .constants import (
-    default_text_model,
-    default_chunk_length,
-)
-
+from .constants import DEFAULT_TEXT_MODEL, DEFAULT_CHUNK_LENGTH, DEBUG
+from .logger import log
 
 def trim_prompt(
-    text, max_tokens=default_chunk_length, model=default_text_model, preserve_top=True
+    text,
+    max_tokens=DEFAULT_CHUNK_LENGTH,
+    model=DEFAULT_TEXT_MODEL,
+    preserve_top=True,
+    debug=DEBUG,
 ):
     """
     Trim the given text to a maximum number of tokens.
@@ -34,6 +34,8 @@ def trim_prompt(
     tokens = encoding.encode(text)
     if len(tokens) <= max_tokens:
         return text  # If text is already within limit, return as is.
+    
+    log(f"Trimming prompt, token len is {str(len(tokens))}", type="warning", log=debug)
 
     # If 'preserve_top' is True, keep the first 'max_tokens' tokens.
     # Otherwise, keep the last 'max_tokens' tokens.
@@ -42,7 +44,7 @@ def trim_prompt(
     )
 
 
-def chunk_prompt(prompt, chunk_length=default_chunk_length):
+def chunk_prompt(prompt, chunk_length=DEFAULT_CHUNK_LENGTH, debug=DEBUG):
     """
     Split the given prompt into chunks where each chunk has a maximum number of tokens.
 
@@ -58,6 +60,9 @@ def chunk_prompt(prompt, chunk_length=default_chunk_length):
         chunk_prompt("This is a test. I am writing a function.", 4)
         Output: ['This is', 'a test.', 'I am', 'writing a', 'function.']
     """
+    if count_tokens(prompt) <= chunk_length:
+        return [prompt]
+
     # Splitting the prompt into sentences using regular expressions.
     sentences = re.split(r"(?<=[.!?])\s+", prompt)
     current_chunk = ""
@@ -78,10 +83,12 @@ def chunk_prompt(prompt, chunk_length=default_chunk_length):
     if current_chunk:
         prompt_chunks.append(current_chunk.strip())
 
+    log(f"Chunked prompt into {str(len(prompt_chunks))} chunks", type="warning", log=debug)
+
     return prompt_chunks
 
 
-def count_tokens(prompt: str, model=default_text_model) -> int:
+def count_tokens(prompt: str, model=DEFAULT_TEXT_MODEL) -> int:
     """
     Count the number of tokens in a string.
 
@@ -98,13 +105,15 @@ def count_tokens(prompt: str, model=default_text_model) -> int:
     """
     if not isinstance(prompt, str):
         prompt = str(prompt)
+        
     encoding = tiktoken.encoding_for_model(model)
-    return len(
+    length = len(
         encoding.encode(prompt)
     )  # Encoding the text into tokens and counting the number of tokens.
+    return length
 
 
-def get_tokens(prompt: str, model=default_text_model) -> list:
+def get_tokens(prompt: str, model=DEFAULT_TEXT_MODEL) -> list:
     """
     Returns a list of tokens in a string.
 
@@ -125,7 +134,7 @@ def get_tokens(prompt: str, model=default_text_model) -> list:
     )  # Encoding the text into tokens and returning the list of tokens.
 
 
-def compose_prompt(prompt_template, parameters):
+def compose_prompt(prompt_template, parameters, debug=DEBUG):
     """
     Composes a prompt using a template and parameters.
     Parameter keys are enclosed in double curly brackets and replaced with parameter values.
@@ -145,26 +154,28 @@ def compose_prompt(prompt_template, parameters):
 
     # Replacing placeholders in the template with the actual values from the parameters.
     for key, value in parameters.items():
-            # check if "{{" + key + "}}" is in prompt
-            # if not, continue
-            if "{{" + key + "}}" not in prompt:
-                continue
-            try:
-                if isinstance(value, str):
-                    prompt = prompt.replace("{{" + key + "}}", value)
-                elif isinstance(value, int):
-                    prompt = prompt.replace("{{" + key + "}}", str(value))
-                elif isinstance(value, dict):
-                    for k, v in value.items():
-                        prompt = prompt.replace("{{" + key + "}}", k + "::" + v)
-                elif isinstance(value, list):
-                    for item in value:
-                        prompt = prompt.replace("{{" + key + "}}", item + "\n")
-                elif value is None:
-                    prompt = prompt.replace("{{" + key + "}}", "None")
-                else:
-                    raise Exception(f"ERROR PARSING:\n{key}\n{value}")
-            except:
+        # check if "{{" + key + "}}" is in prompt
+        # if not, continue
+        if "{{" + key + "}}" not in prompt:
+            continue
+        try:
+            if isinstance(value, str):
+                prompt = prompt.replace("{{" + key + "}}", value)
+            elif isinstance(value, int):
+                prompt = prompt.replace("{{" + key + "}}", str(value))
+            elif isinstance(value, dict):
+                for k, v in value.items():
+                    prompt = prompt.replace("{{" + key + "}}", k + "::" + v)
+            elif isinstance(value, list):
+                for item in value:
+                    prompt = prompt.replace("{{" + key + "}}", item + "\n")
+            elif value is None:
+                prompt = prompt.replace("{{" + key + "}}", "None")
+            else:
                 raise Exception(f"ERROR PARSING:\n{key}\n{value}")
+        except:
+            raise Exception(f"ERROR PARSING:\n{key}\n{value}")
+
+    log(f"Composed prompt:\n{prompt}", log=debug)
 
     return prompt
