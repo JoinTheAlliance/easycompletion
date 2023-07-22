@@ -118,10 +118,17 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
     if function is None:
         log("No matching function found", type="error", log=debug)
         return False
+    
+    required_properties = function["parameters"].get("required", [])
 
-    # Check if the function's argument keys match with the response's argument keys
-    if set(function["parameters"]["properties"].keys()) != set(arguments.keys()):
-        log("Argument keys do not match", type="error", log=debug)
+    # Check that arguments.keys() contains all of the required properties
+    if not all(required_property in arguments.keys() for required_property in required_properties):
+        log(
+            "ERROR: Argument keys do not match.\n"
+            + f"\nExpected keys:\n{str(function['parameters']['properties'].keys())}"
+            +f"\n\nActual keys:\n{str(arguments.keys())}",
+            type="error", log=debug)
+
         return False
 
     log("Function call is valid", type="success", log=debug)
