@@ -124,7 +124,7 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
     # Check that arguments.keys() contains all of the required properties
     if not all(required_property in arguments.keys() for required_property in required_properties):
         log(
-            "ERROR: Argument keys do not match.\n"
+            "ERROR: Response did not contain all required properties.\n"
             + f"\nExpected keys:\n{str(function['parameters']['properties'].keys())}"
             +f"\n\nActual keys:\n{str(arguments.keys())}",
             type="error", log=debug)
