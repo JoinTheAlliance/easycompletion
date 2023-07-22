@@ -12,6 +12,6 @@ if LONG_TEXT_MODEL == None or LONG_TEXT_MODEL == "":
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-DEBUG = os.environ.get("DEBUG")
+DEBUG = os.environ.get("DEBUG") == "true" or os.environ.get("DEBUG") == "True"
 
-DEFAULT_CHUNK_LENGTH = 4096 * 3 / 4 # 3/4ths of the context window size
+DEFAULT_CHUNK_LENGTH = 4096 * 3 / 4  # 3/4ths of the context window size

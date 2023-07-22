@@ -13,7 +13,6 @@ DEFAULT_TYPE_COLORS = {
     "info": "blue",
     "prompt": "cyan",
     "success": "green",
-    "debug": "magenta",
     "critical": "red",
     "system": "magenta",
 }

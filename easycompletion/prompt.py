@@ -4,6 +4,7 @@ import tiktoken
 from .constants import DEFAULT_TEXT_MODEL, DEFAULT_CHUNK_LENGTH, DEBUG
 from .logger import log
 
+
 def trim_prompt(
     text,
     max_tokens=DEFAULT_CHUNK_LENGTH,
@@ -34,7 +35,7 @@ def trim_prompt(
     tokens = encoding.encode(text)
     if len(tokens) <= max_tokens:
         return text  # If text is already within limit, return as is.
-    
+
     log(f"Trimming prompt, token len is {str(len(tokens))}", type="warning", log=debug)
 
     # If 'preserve_top' is True, keep the first 'max_tokens' tokens.
@@ -83,7 +84,11 @@ def chunk_prompt(prompt, chunk_length=DEFAULT_CHUNK_LENGTH, debug=DEBUG):
     if current_chunk:
         prompt_chunks.append(current_chunk.strip())
 
-    log(f"Chunked prompt into {str(len(prompt_chunks))} chunks", type="warning", log=debug)
+    log(
+        f"Chunked prompt into {str(len(prompt_chunks))} chunks",
+        type="warning",
+        log=debug,
+    )
 
     return prompt_chunks
 
@@ -105,7 +110,7 @@ def count_tokens(prompt: str, model=DEFAULT_TEXT_MODEL) -> int:
     """
     if not isinstance(prompt, str):
         prompt = str(prompt)
-        
+
     encoding = tiktoken.encoding_for_model(model)
     length = len(
         encoding.encode(prompt)

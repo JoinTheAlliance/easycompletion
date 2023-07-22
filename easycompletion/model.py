@@ -231,11 +231,10 @@ def openai_text_call(
     for i in range(model_failure_retries):
         try:
             response = openai.ChatCompletion.create(model=model, messages=messages)
+            break
         except Exception as e:
             log(f"OpenAI Error: {e}", type="error", log=debug)
             continue
-        if response is not None:
-            break
         # wait 1 second
         time.sleep(1)
 
@@ -333,6 +332,21 @@ def openai_function_call(
         log("Text is required", type="error", log=debug)
         return {"error": "text is required"}
 
+    function_call_names = [function["name"] for function in functions]
+    # check that all function_call_names are unique and in the text
+    if len(function_call_names) != len(set(function_call_names)):
+        log("Function names must be unique", type="error", log=debug)
+        return {"error": "Function names must be unique"}
+
+    if len(function_call_names) > 1 and not any(
+        function_call_name in text for function_call_name in function_call_names
+    ):
+        log(
+            "WARNING: Function and argument names should be in the text",
+            type="warning",
+            log=debug,
+        )
+
     # Check if the function call is valid
     if function_call != "auto":
         if isinstance(function_call, str):
@@ -375,46 +389,39 @@ def openai_function_call(
     # Prepare the messages to be sent to the API
     messages = [{"role": "user", "content": text}]
 
-    log(f"Prompt:\n{text}\n\nFunctions:\n{json.dumps(functions, indent=4)}", type="prompt", log=debug)
+    log(
+        f"Prompt:\n{text}\n\nFunctions:\n{json.dumps(functions, indent=4)}",
+        type="prompt",
+        log=debug,
+    )
 
-    # Define a nested function to handle API request and exceptions
-    def try_request():
-        """Attempts to create a chat completion with OpenAI's API and handles any exceptions that may occur."""
-        try:
-            # If there are function(s) to call
-            if functions:
+    # Retry function call and model calls according to the specified retry counts
+    response = None
+    for _ in range(function_failure_retries):
+        for _ in range(model_failure_retries):
+            try:
+                # If there are function(s) to call
                 response = openai.ChatCompletion.create(
                     model=model,
                     messages=messages,
                     functions=functions,
                     function_call=function_call,
                 )
-            else:
-                # If there are no function(s) to call
-                response = openai.ChatCompletion.create(model=model, messages=messages)
-            return response
-        except Exception as e:
-            log(f"OpenAI Error: {e}", type="error", log=debug)
-            return None
-
-    # Retry function call and model calls according to the specified retry counts
-    response = None
-    for _ in range(function_failure_retries):
-        for _ in range(model_failure_retries):
-            response = try_request()
-            if response:
+                if not response.get("choices") or response["choices"][0] is None:
+                    log("No choices in response", type="error", log=debug)
+                    continue
                 break
-        if functions is None or validate_functions(response, functions, function_call):
+            except Exception as e:
+                log(f"OpenAI Error: {e}", type="error", log=debug)
+            time.sleep(1)
+        if validate_functions(response, functions, function_call):
             break
+        time.sleep(1)
 
     # Check if we have a valid response from OpenAI API
-    if (
-        response is None
-        or not response.get("choices")
-        or response["choices"][0] is None
-    ):
-        error = "Could not get a successful response from OpenAI API"
-        print(error)
+    if response is None:
+        error = "Could not get a successful response from OpenAI API. Check your API key and arguments."
+        log(error, type="error", log=True)
         return {"error": error}
 
     # Extracting the content and function call response from API response
@@ -431,7 +438,11 @@ def openai_function_call(
         return {"error": "No function call in response"}
     function_name = function_call_response["name"]
     arguments = parse_arguments(function_call_response["arguments"])
-    log(f"Response\n\nFunction Name: {function_name}\n\nArguments:\n{arguments}\n\nText:\n{text}\n\nFinish Reason: {finish_reason}\n\nUsage:\n{usage}", type="response", log=debug)
+    log(
+        f"Response\n\nFunction Name: {function_name}\n\nArguments:\n{arguments}\n\nText:\n{text}\n\nFinish Reason: {finish_reason}\n\nUsage:\n{usage}",
+        type="response",
+        log=debug,
+    )
     # Return the final result with the text response, function name, arguments and no error
     return {
         "text": text,
