@@ -55,10 +55,10 @@ def parse_arguments(arguments, debug=DEBUG):
                 arguments = re.sub(r"[^\x00-\x7F]+", "", arguments)
                 arguments = json.loads(arguments)
             # If everything fails, try Python's eval function
-            except (ValueError, SyntaxError):
+            except Exception:
                 try:
                     arguments = eval(arguments)
-                except (ValueError, SyntaxError):
+                except Exception:
                     arguments = None
     log(f"Arguments:\n{str(arguments)}", log=debug)
     return arguments
