@@ -83,7 +83,7 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
         "function_call", None
     )
     if response_function_call is None:
-        log("No function call in response", type="error", log=debug)
+        log(f"No function call in response\n{response}", type="error", log=debug)
         return False
 
     # If function_call is not "auto" and the name does not match with the response, return False
@@ -103,12 +103,7 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
 
     # Parse the arguments from the response
     arguments = parse_arguments(response_function_call["arguments"])
-
-    # If arguments are None, return False
-    if arguments is None:
-        log("Arguments are None", type="error", log=debug)
-        return False
-
+    
     # Get the function that matches the function name from the list of functions
     function = next(
         (item for item in functions if item["name"] == function_call_name), None
@@ -116,8 +111,23 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
 
     # If no matching function is found, return False
     if function is None:
-        log("No matching function found", type="error", log=debug)
+        log(
+            "No matching function found"
+            + f"\nExpected function name:\n{str(function_call_name)}"
+            + f"\n\nResponse:\n{str(response)}"
+            , type="error", log=debug)
         return False
+
+    # If arguments are None, return False
+    if arguments is None:
+        log(
+            "Arguments are None"
+            + f"\nExpected arguments:\n{str(function['parameters']['properties'].keys())}"
+            + f"\n\nResponse function call:\n{str(response_function_call)}"
+            , type="error", log=debug)
+        #
+        return False
+
     
     required_properties = function["parameters"].get("required", [])
 
@@ -441,7 +451,7 @@ def openai_function_call(
 
     # If no function call in response, return an error
     if function_call_response is None:
-        log("No function call in response", type="error", log=debug)
+        log(f"No function call in response\n{response}", type="error", log=debug)
         return {"error": "No function call in response"}
     function_name = function_call_response["name"]
     arguments = parse_arguments(function_call_response["arguments"])
