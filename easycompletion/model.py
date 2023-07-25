@@ -233,7 +233,7 @@ def openai_text_call(
         print("Error: Message too long")
         return {
             "text": None,
-            usage: None,
+            "usage": None,
             "finish_reason": None,
             "error": "Message too long",
         }
@@ -263,7 +263,7 @@ def openai_text_call(
     ):
         return {
             "text": None,
-            usage: None,
+            "usage": None,
             "finish_reason": None,
             "error": "Error: Could not get a successful response from OpenAI API",
         }
