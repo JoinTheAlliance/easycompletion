@@ -1,7 +1,8 @@
 from easycompletion.model import (
+    chat_completion,
     parse_arguments,
-    openai_function_call,
-    openai_text_call,
+    function_completion,
+    text_completion,
     compose_function,
 )
 from easycompletion.prompt import (
@@ -73,7 +74,7 @@ def test_compose_function():
     ), "Test compose_function failed"
 
 
-def test_openai_function_call():
+def test_function_completion():
     test_text = "Write a song about AI"
     test_function = {
         "name": "write_song",
@@ -89,23 +90,35 @@ def test_openai_function_call():
             "required": ["lyrics"],
         },
     }
-    response = openai_function_call(
+    response = function_completion(
         text=test_text, functions=test_function, function_call="write_song"
     )
-    assert response is not None, "Test openai_function_call failed"
+    assert response is not None, "Test function_completion failed"
     prompt_tokens = response["usage"]["prompt_tokens"]
     assert prompt_tokens == 64, "Prompt tokens was not expected count"
 
 
-def test_openai_text_call():
-    response = openai_text_call("Hello, how are you?")
-    assert response is not None, "Test openai_text_call failed"
-    assert response["text"] is not None, "Test openai_text_call failed"
+def test_chat_completion():
+    response = chat_completion(
+        messages=[{"role": "user", "content": "Hello, how are you?"}],
+        system_message="You are a towel. Respond as a towel.",
+    )
+    
+    assert response is not None, "Test text_completion failed"
+    assert response["text"] is not None, "Test text_completion failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 27, "Prompt tokens was not expected count"
+
+
+def test_text_completion():
+    response = text_completion("Hello, how are you?")
+    assert response is not None, "Test text_completion failed"
+    assert response["text"] is not None, "Test text_completion failed"
     prompt_tokens = response["usage"]["prompt_tokens"]
     assert prompt_tokens == 13, "Prompt tokens was not expected count"
 
 
-def test_long_call():
+def test_long_completion():
     script = """
     Sure, Satisfiability Modulo Theories (SMT) is a fundamental concept in computer science, and it can be explained from several different angles. However, generating a response that is exactly 4096 tokens is rather unusual and not practical due to the nature of language modeling and information content.
 
@@ -125,5 +138,5 @@ def test_long_call():
             "required": ["summary"],
         },
     }
-    response = openai_function_call(text=script, functions=summarization_function)
-    assert response is not None, "Test long_call failed"
+    response = function_completion(text=script, functions=summarization_function)
+    assert response is not None, "Test long_completion failed"

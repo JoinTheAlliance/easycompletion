@@ -66,10 +66,10 @@ def parse_arguments(arguments, debug=DEBUG):
 
 def validate_functions(response, functions, function_call, debug=DEBUG):
     """
-    Validates if the function returned by the OpenAI API matches the intended function call.
+    Validates if the function returned matches the intended function call.
 
     Parameters:
-        response (dict): The response from OpenAI API.
+        response (dict): The response from the model.
         functions (list): A list of function definitions.
         function_call (dict or str): The expected function call.
 
@@ -103,7 +103,7 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
 
     # Parse the arguments from the response
     arguments = parse_arguments(response_function_call["arguments"])
-    
+
     # Get the function that matches the function name from the list of functions
     function = next(
         (item for item in functions if item["name"] == function_call_name), None
@@ -114,8 +114,10 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
         log(
             "No matching function found"
             + f"\nExpected function name:\n{str(function_call_name)}"
-            + f"\n\nResponse:\n{str(response)}"
-            , type="error", log=debug)
+            + f"\n\nResponse:\n{str(response)}",
+            type="error",
+            log=debug,
+        )
         return False
 
     # If arguments are None, return False
@@ -123,21 +125,27 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
         log(
             "Arguments are None"
             + f"\nExpected arguments:\n{str(function['parameters']['properties'].keys())}"
-            + f"\n\nResponse function call:\n{str(response_function_call)}"
-            , type="error", log=debug)
+            + f"\n\nResponse function call:\n{str(response_function_call)}",
+            type="error",
+            log=debug,
+        )
         #
         return False
 
-    
     required_properties = function["parameters"].get("required", [])
 
     # Check that arguments.keys() contains all of the required properties
-    if not all(required_property in arguments.keys() for required_property in required_properties):
+    if not all(
+        required_property in arguments.keys()
+        for required_property in required_properties
+    ):
         log(
             "ERROR: Response did not contain all required properties.\n"
             + f"\nExpected keys:\n{str(function['parameters']['properties'].keys())}"
-            +f"\n\nActual keys:\n{str(arguments.keys())}",
-            type="error", log=debug)
+            + f"\n\nActual keys:\n{str(arguments.keys())}",
+            type="error",
+            log=debug,
+        )
 
         return False
 
@@ -147,7 +155,7 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
 
 def compose_function(name, description, properties, required_properties, debug=DEBUG):
     """
-    Composes a function object for OpenAI API.
+    Composes a function object for function calling.
 
     Parameters:
         name (str): The name of the function.
@@ -184,7 +192,106 @@ def compose_function(name, description, properties, required_properties, debug=D
     return function
 
 
-def openai_text_call(
+def chat_completion(
+    messages,
+    system_message=None,
+    model_failure_retries=5,
+    model=None,
+    chunk_length=DEFAULT_CHUNK_LENGTH,
+    api_key=None,
+    debug=DEBUG,
+):
+    """
+    Function for sending chat messages and returning a chat response.
+
+    Parameters:
+        messages (str): Messages to send to the model. In the form {<role>: string, <content>: string} - roles are "user" and "assistant"
+        system_message (str, optional): Message appended at the top sent by the system. Usually used to tell what the agent how to act.
+        model_failure_retries (int, optional): Number of retries if the request fails. Default is 5.
+        model (str, optional): The model to use. Default is the DEFAULT_TEXT_MODEL defined in constants.py.
+        chunk_length (int, optional): Maximum length of text chunk to process. Default is defined in constants.py.
+        api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
+
+    Returns:
+        str: The response content from the model.
+
+    Example:
+        >>> text_completion("Hello, how are you?", model_failure_retries=3, model='gpt-3.5-turbo', chunk_length=1024, api_key='your_openai_api_key')
+    """
+
+    # Override the API key if provided as parameter
+    if api_key is not None:
+        openai.api_key = api_key
+
+    # Use the default model if no model is specified
+    if model == None:
+        model = DEFAULT_TEXT_MODEL
+
+    # Count tokens in the input text
+    total_tokens = count_tokens(messages, model=model)
+
+    # If text is longer than chunk_length and model is not for long texts, switch to the long text model
+    if total_tokens > chunk_length and "16k" not in model:
+        model = LONG_TEXT_MODEL
+        if not os.environ.get("SUPPRESS_WARNINGS"):
+            print(
+                "Warning: Message is long. Using 16k model (to hide this message, set SUPPRESS_WARNINGS=1)"
+            )
+
+    # If text is too long even for long text model, return None
+    if total_tokens > (16384 - chunk_length):
+        print("Error: Message too long")
+        return {
+            "text": None,
+            "usage": None,
+            "finish_reason": None,
+            "error": "Message too long",
+        }
+
+    # Prepare messages for the API call
+    messages = [{"role": "system", "content": system_message}] + messages
+
+    log(f"Prompt:\n{str(messages)}", type="prompt", log=debug)
+
+    # Try to make a request for a specified number of times
+    response = None
+    for i in range(model_failure_retries):
+        try:
+            response = openai.ChatCompletion.create(model=model, messages=messages)
+            break
+        except Exception as e:
+            log(f"OpenAI Error: {e}", type="error", log=debug)
+            continue
+        # wait 1 second
+        time.sleep(1)
+
+    # If response is not valid, print an error message and return None
+    if (
+        response is None
+        or response["choices"] is None
+        or response["choices"][0] is None
+    ):
+        return {
+            "text": None,
+            "usage": None,
+            "finish_reason": None,
+            "error": "Error: Could not get a successful response from OpenAI API",
+        }
+
+    # Extract content from the response
+    text = response["choices"][0]["message"]["content"]
+    finish_reason = response["choices"][0]["finish_reason"]
+    usage = response["usage"]
+
+    return {
+        "text": text,
+        "usage": usage,
+        "finish_reason": finish_reason,
+        "error": None,
+    }
+
+
+def text_completion(
     text,
     model_failure_retries=5,
     model=None,
@@ -193,7 +300,7 @@ def openai_text_call(
     debug=DEBUG,
 ):
     """
-    Function for sending text to the OpenAI API and returning a text response.
+    Function for sending text and returning a text completion response.
 
     Parameters:
         text (str): Text to send to the model.
@@ -206,7 +313,7 @@ def openai_text_call(
         str: The response content from the model.
 
     Example:
-        >>> openai_text_call("Hello, how are you?", model_failure_retries=3, model='gpt-3.5-turbo', chunk_length=1024, api_key='your_openai_api_key')
+        >>> text_completion("Hello, how are you?", model_failure_retries=3, model='gpt-3.5-turbo', chunk_length=1024, api_key='your_openai_api_key')
     """
 
     # Override the API key if provided as parameter
@@ -281,7 +388,7 @@ def openai_text_call(
     }
 
 
-def openai_function_call(
+def function_completion(
     text,
     functions=None,
     model_failure_retries=5,
@@ -293,7 +400,7 @@ def openai_function_call(
     debug=DEBUG,
 ):
     """
-    Send text and a list of functions to the OpenAI API and return optional text and a function call.
+    Send text and a list of functions to the model and return optional text and a function call.
     The function call is validated against the functions array.
     The input text is sent to the chat model and is treated as a user message.
 
@@ -313,7 +420,7 @@ def openai_function_call(
 
     Example:
         >>> function = {'name': 'function1', 'parameters': {'param1': 'value1'}}
-        >>> openai_function_call("Call the function.", function)
+        >>> function_completion("Call the function.", function)
     """
 
     # Check if the user provided an API key
@@ -435,9 +542,9 @@ def openai_function_call(
             break
         time.sleep(1)
 
-    # Check if we have a valid response from OpenAI API
+    # Check if we have a valid response from the model
     if response is None:
-        error = "Could not get a successful response from OpenAI API. Check your API key and arguments."
+        error = "Could not get a successful response from the model. Check your API key and arguments."
         log(error, type="error", log=True)
         return {"error": error}
 

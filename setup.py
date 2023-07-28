@@ -12,8 +12,8 @@ with open("README.md", "r") as fh:
 
 setup(
     name="easycompletion",
-    version='0.2.10',
-    description="Easy text completion and function calling using the OpenAI API. Also includes useful utilities for counting tokens, composing prompts and trimming them to fit within the token limit.",
+    version='0.3.0',
+    description="Easy text completion and function calling. Also includes useful utilities for counting tokens, composing prompts and trimming them to fit within the token limit.",
     long_description=long_description,  # added this line
     long_description_content_type="text/markdown",  # and this line
     url="https://github.com/AutonomousResearchGroup/easycompletion",
@@ -24,11 +24,11 @@ setup(
     install_requires=["openai", "tiktoken", "python-dotenv", "rich"],
     readme="README.md",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
-        "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3",
+        "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
     ],

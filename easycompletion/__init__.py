@@ -1,8 +1,11 @@
 from .model import (
-    openai_function_call,
-    openai_text_call,
+    function_completion,
+    text_completion,
     compose_function,
 )
+
+openai_function_call = function_completion
+openai_text_completion = text_completion
 
 from .prompt import (
     compose_prompt,
@@ -18,8 +21,10 @@ from .constants import (
 )
 
 __all__ = [
+    "function_completion",
+    "text_completion",
     "openai_function_call",
-    "openai_text_call",
+    "openai_text_completion",
     "compose_prompt",
     "compose_function",
     "trim_prompt",

@@ -1,6 +1,6 @@
 # easycompletion <a href="https://discord.gg/qetWd7J9De"><img style="float: right" src="https://dcbadge.vercel.app/api/server/qetWd7J9De" alt=""></a>
 
-Easy text completion and function calling using the OpenAI API. Also includes useful utilities for counting tokens, composing prompts and trimming them to fit within the token limit.
+Easy text and chat completion, as well as function calling. Also includes useful utilities for counting tokens, composing prompts and trimming them to fit within the token limit.
 
 <img src="resources/image.jpg">
 
@@ -13,7 +13,7 @@ pip install easycompletion
 # Quickstart
 
 ```python
-from easycompletion import openai_function_call, openai_text_call, compose_prompt
+from easycompletion import function_completion, text_completion, compose_prompt
 
 # Compose a function object
 test_function = compose_function(
@@ -29,7 +29,7 @@ test_function = compose_function(
 )
 
 # Call the function
-response = openai_function_call(text="Write a song about AI", functions=[test_function], function_call="write_song")
+response = function_completion(text="Write a song about AI", functions=[test_function], function_call="write_song")
 
 # Print the response
 print(response["arguments"]["lyrics"])
@@ -53,8 +53,8 @@ prompt = compose_prompt(test_prompt, test_dict)
 Send text, get a response as a text string
 
 ```python
-from easycompletion import openai_text_call
-response = openai_text_call("Hello, how are you?")
+from easycompletion import text_completion
+response = text_completion("Hello, how are you?")
 # response["text"] = "As an AI language model, I don't have feelings, but...""
 ```
 
@@ -83,11 +83,11 @@ test_function = compose_function(
 Send text and a list of functions and get a response as a function call
 
 ```python
-from easycompletion import openai_function_call, compose_function
+from easycompletion import function_completion, compose_function
 
 # NOTE: test_function is a function object created using compose_function in the example above...
 
-response = openai_function_call(text="Write a song about AI", functions=[test_function], function_call="write_song")
+response = function_completion(text="Write a song about AI", functions=[test_function], function_call="write_song")
 # Response structure is { "text": string, "function_name": string, "arguments": dict  }
 print(response["arguments"]["lyrics"])
 ```
@@ -96,7 +96,7 @@ print(response["arguments"]["lyrics"])
 
 ### `compose_function(name, description, properties, required_properties)`
 
-Composes a function object for OpenAI API.
+Composes a function object for function completions.
 
 ```python
 summarization_function = compose_function(
@@ -112,12 +112,42 @@ summarization_function = compose_function(
 )
 ```
 
-### `openai_text_call(text, model_failure_retries=5, model=None, chunk_length=DEFAULT_CHUNK_LENGTH, api_key=None)`
+### `chat_completion(text, model_failure_retries=5, model=None, chunk_length=DEFAULT_CHUNK_LENGTH, api_key=None)`
 
-Sends text to the OpenAI API and returns a text response.
+Send a list of messages as a chat and returns a text response.
 
 ```python
-response = openai_text_call(
+response = chat_completion(
+    messages = [{ "user": "Hello, how are you?"}],
+    system_message = "You are a towel. Respond as a towel.",
+    model_failure_retries=3,
+    model='gpt-3.5-turbo',
+    chunk_length=1024,
+    api_key='your_openai_api_key'
+)
+```
+
+The response object looks like this:
+
+```json
+{
+  "text": "string",
+  "usage": {
+    "prompt_tokens": "number",
+    "completion_tokens": "number",
+    "total_tokens": "number"
+  },
+  "error": "string|None",
+  "finish_reason": "string"
+}
+```
+
+### `text_completion(text, model_failure_retries=5, model=None, chunk_length=DEFAULT_CHUNK_LENGTH, api_key=None)`
+
+Sends text to the model and returns a text response.
+
+```python
+response = text_completion(
     "Hello, how are you?",
     model_failure_retries=3,
     model='gpt-3.5-turbo',
@@ -130,20 +160,20 @@ The response object looks like this:
 
 ```json
 {
-    "text": "string",
-    "usage": {
-        "prompt_tokens": "number",
-        "completion_tokens": "number",
-        "total_tokens": "number"
-    },
-    "error": "string|None",
-    "finish_reason": "string"
+  "text": "string",
+  "usage": {
+    "prompt_tokens": "number",
+    "completion_tokens": "number",
+    "total_tokens": "number"
+  },
+  "error": "string|None",
+  "finish_reason": "string"
 }
 ```
 
-### `openai_function_call(text, functions=None, model_failure_retries=5, function_call=None, function_failure_retries=10, chunk_length=DEFAULT_CHUNK_LENGTH, model=None, api_key=None)`
+### `function_completion(text, functions=None, model_failure_retries=5, function_call=None, function_failure_retries=10, chunk_length=DEFAULT_CHUNK_LENGTH, model=None, api_key=None)`
 
-Sends text and a list of functions to the OpenAI API and returns optional text and a function call. The function call is validated against the functions array.
+Sends text and a list of functions to the model and returns optional text and a function call. The function call is validated against the functions array.
 
 ```python
 function = {
@@ -151,23 +181,23 @@ function = {
     'parameters': {'param1': 'value1'}
 }
 
-response = openai_function_call("Call the function.", function)
+response = function_completion("Call the function.", function)
 ```
 
 The response object looks like this:
 
 ```json
 {
-    "text": "string",
-    "function_name": "string",
-    "arguments": "dict",
-    "usage": {
-        "prompt_tokens": "number",
-        "completion_tokens": "number",
-        "total_tokens": "number"
-    },
-    "finish_reason": "string",
-    "error": "string|None"
+  "text": "string",
+  "function_name": "string",
+  "arguments": "dict",
+  "usage": {
+    "prompt_tokens": "number",
+    "completion_tokens": "number",
+    "total_tokens": "number"
+  },
+  "finish_reason": "string",
+  "error": "string|None"
 }
 ```
 
@@ -213,13 +243,13 @@ prompt = compose_prompt("Hello {{name}}!", {"name": "John"})
 
 ## A note about models
 
-You can pass in a model using the `model` parameter of either openai_function_call or openai_text_call. If you do not pass in a model, the default model will be used. You can also override this by setting the environment model via `OPENAI_MODEL` environment variable.
+You can pass in a model using the `model` parameter of either function_completion or text_completion. If you do not pass in a model, the default model will be used. You can also override this by setting the environment model via `OPENAI_MODEL` environment variable.
 
 Default model is gpt-turbo-3.5-0613.
 
 ## A note about API keys
 
-You can pass in an API key using the `api_key` parameter of either openai_function_call or openai_text_call. If you do not pass in an API key, the `OPENAI_API_KEY` environment variable will be checked.
+You can pass in an API key using the `api_key` parameter of either function_completion or text_completion. If you do not pass in an API key, the `OPENAI_API_KEY` environment variable will be checked.
 
 # Publishing
 
