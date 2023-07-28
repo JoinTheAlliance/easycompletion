@@ -4,6 +4,9 @@ Easy text completion and function calling using the OpenAI API. Also includes us
 
 <img src="resources/image.jpg">
 
+[![Lint and Test](https://github.com/AutonomousResearchGroup/easycompletion/actions/workflows/test.yml/badge.svg)](https://github.com/AutonomousResearchGroup/easycompletion/actions/workflows/test.yml)
+[![PyPI version](https://badge.fury.io/py/easycompletion.svg)](https://badge.fury.io/py/easycompletion)
+
 # Installation
 
 ```bash
