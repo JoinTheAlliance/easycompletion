@@ -5,7 +5,7 @@ from .model import (
 )
 
 openai_function_call = function_completion
-openai_text_completion = text_completion
+openai_text_call = text_completion
 
 from .prompt import (
     compose_prompt,
