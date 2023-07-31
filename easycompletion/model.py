@@ -515,7 +515,7 @@ def function_completion(
     all_messages = []
 
     if system_message is not None:
-        messages.append({"role": "system", "content": system_message})
+        all_messages.append({"role": "system", "content": system_message})
 
     if messages is not None:
         all_messages += messages
