@@ -174,9 +174,11 @@ The response object looks like this:
 }
 ```
 
-### `function_completion(text, functions=None, model_failure_retries=5, function_call=None, function_failure_retries=10, chunk_length=DEFAULT_CHUNK_LENGTH, model=None, api_key=None)`
+### `function_completion(text, functions=None, system_message=None, messages=None, model_failure_retries=5, function_call=None, function_failure_retries=10, chunk_length=DEFAULT_CHUNK_LENGTH, model=None, api_key=None)`
 
 Sends text and a list of functions to the model and returns optional text and a function call. The function call is validated against the functions array.
+
+Optionally takes a system message and a list of messages to send to the model before the function call. If messages are provided, the "text" becomes the last user message in the list.
 
 ```python
 function = {

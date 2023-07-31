@@ -390,6 +390,8 @@ def text_completion(
 
 def function_completion(
     text,
+    system_message=None,
+    messages=None,
     functions=None,
     model_failure_retries=5,
     function_call=None,
@@ -510,8 +512,16 @@ def function_completion(
         log("Error: Message too long", type="error", log=debug)
         return {"error": "Message too long"}
 
+    all_messages = []
+
+    if system_message is not None:
+        messages.append({"role": "system", "content": system_message})
+
+    if messages is not None:
+        all_messages += messages
+
     # Prepare the messages to be sent to the API
-    messages = [{"role": "user", "content": text}]
+    all_messages.append({"role": "user", "content": text})
 
     log(
         f"Prompt:\n{text}\n\nFunctions:\n{json.dumps(functions, indent=4)}",
@@ -527,7 +537,7 @@ def function_completion(
                 # If there are function(s) to call
                 response = openai.ChatCompletion.create(
                     model=model,
-                    messages=messages,
+                    messages=all_messages,
                     functions=functions,
                     function_call=function_call,
                 )
