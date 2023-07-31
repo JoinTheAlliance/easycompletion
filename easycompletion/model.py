@@ -200,6 +200,7 @@ def chat_completion(
     chunk_length=DEFAULT_CHUNK_LENGTH,
     api_key=None,
     debug=DEBUG,
+    temperature=0.0
 ):
     """
     Function for sending chat messages and returning a chat response.
@@ -257,7 +258,7 @@ def chat_completion(
     response = None
     for i in range(model_failure_retries):
         try:
-            response = openai.ChatCompletion.create(model=model, messages=messages)
+            response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
             break
         except Exception as e:
             log(f"OpenAI Error: {e}", type="error", log=debug)
@@ -298,6 +299,7 @@ def text_completion(
     chunk_length=DEFAULT_CHUNK_LENGTH,
     api_key=None,
     debug=DEBUG,
+    temperature=0.0
 ):
     """
     Function for sending text and returning a text completion response.
@@ -354,7 +356,7 @@ def text_completion(
     response = None
     for i in range(model_failure_retries):
         try:
-            response = openai.ChatCompletion.create(model=model, messages=messages)
+            response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
             break
         except Exception as e:
             log(f"OpenAI Error: {e}", type="error", log=debug)
@@ -400,6 +402,7 @@ def function_completion(
     model=None,
     api_key=None,
     debug=DEBUG,
+    temperature=0.0
 ):
     """
     Send text and a list of functions to the model and return optional text and a function call.
@@ -540,6 +543,7 @@ def function_completion(
                     messages=all_messages,
                     functions=functions,
                     function_call=function_call,
+                    temperature=temperature
                 )
                 if not response.get("choices") or response["choices"][0] is None:
                     log("No choices in response", type="error", log=debug)
