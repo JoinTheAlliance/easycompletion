@@ -184,3 +184,43 @@ def compose_prompt(prompt_template, parameters, debug=DEBUG):
     log(f"Composed prompt:\n{prompt}", log=debug)
 
     return prompt
+
+
+def compose_function(name, description, properties, required_properties, debug=DEBUG):
+    """
+    Composes a function object for function calling.
+
+    Parameters:
+        name (str): The name of the function.
+        description (str): Description of the function.
+        properties (dict): Dictionary of property objects.
+        required_properties (list): List of property names that are required.
+
+    Returns:
+        A dictionary representing a function.
+
+    Usage:
+        summarization_function = compose_function(
+            name="summarize_text",
+            description="Summarize the text. Include the topic, subtopics.",
+            properties={
+                "summary": {
+                    "type": "string",
+                    "description": "Detailed summary of the text.",
+                },
+            },
+            required_properties=["summary"],
+        )
+    """
+    function = {
+        "name": name,
+        "description": description,
+        "parameters": {
+            "type": "object",
+            "properties": properties,
+            "required": required_properties,
+        },
+    }
+    log(f"Function:\n{str(function)}", type="info", log=debug)
+    return function
+

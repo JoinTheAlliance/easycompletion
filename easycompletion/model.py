@@ -79,6 +79,8 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
     Usage:
         isValid = validate_functions(response, functions, function_call)
     """
+    print('response')
+    print(response)
     response_function_call = response["choices"][0]["message"].get(
         "function_call", None
     )
@@ -153,61 +155,20 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
     return True
 
 
-def compose_function(name, description, properties, required_properties, debug=DEBUG):
-    """
-    Composes a function object for function calling.
-
-    Parameters:
-        name (str): The name of the function.
-        description (str): Description of the function.
-        properties (dict): Dictionary of property objects.
-        required_properties (list): List of property names that are required.
-
-    Returns:
-        A dictionary representing a function.
-
-    Usage:
-        summarization_function = compose_function(
-            name="summarize_text",
-            description="Summarize the text. Include the topic, subtopics.",
-            properties={
-                "summary": {
-                    "type": "string",
-                    "description": "Detailed summary of the text.",
-                },
-            },
-            required_properties=["summary"],
-        )
-    """
-    function = {
-        "name": name,
-        "description": description,
-        "parameters": {
-            "type": "object",
-            "properties": properties,
-            "required": required_properties,
-        },
-    }
-    log(f"Function:\n{str(function)}", type="info", log=debug)
-    return function
-
-
 def chat_completion(
     messages,
-    system_message=None,
     model_failure_retries=5,
     model=None,
     chunk_length=DEFAULT_CHUNK_LENGTH,
     api_key=None,
     debug=DEBUG,
-    temperature=0.0
+    temperature=0.0,
 ):
     """
     Function for sending chat messages and returning a chat response.
 
     Parameters:
         messages (str): Messages to send to the model. In the form {<role>: string, <content>: string} - roles are "user" and "assistant"
-        system_message (str, optional): Message appended at the top sent by the system. Usually used to tell what the agent how to act.
         model_failure_retries (int, optional): Number of retries if the request fails. Default is 5.
         model (str, optional): The model to use. Default is the DEFAULT_TEXT_MODEL defined in constants.py.
         chunk_length (int, optional): Maximum length of text chunk to process. Default is defined in constants.py.
@@ -249,22 +210,19 @@ def chat_completion(
             "error": "Message too long",
         }
 
-    # Prepare messages for the API call
-    messages = [{"role": "system", "content": system_message}] + messages
-
     log(f"Prompt:\n{str(messages)}", type="prompt", log=debug)
 
     # Try to make a request for a specified number of times
     response = None
     for i in range(model_failure_retries):
         try:
-            response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
+            response = openai.ChatCompletion.create(
+                model=model, messages=messages, temperature=temperature
+            )
             break
         except Exception as e:
             log(f"OpenAI Error: {e}", type="error", log=debug)
             continue
-        # wait 1 second
-        time.sleep(1)
 
     # If response is not valid, print an error message and return None
     if (
@@ -299,7 +257,7 @@ def text_completion(
     chunk_length=DEFAULT_CHUNK_LENGTH,
     api_key=None,
     debug=DEBUG,
-    temperature=0.0
+    temperature=0.0,
 ):
     """
     Function for sending text and returning a text completion response.
@@ -356,7 +314,9 @@ def text_completion(
     response = None
     for i in range(model_failure_retries):
         try:
-            response = openai.ChatCompletion.create(model=model, messages=messages, temperature=temperature)
+            response = openai.ChatCompletion.create(
+                model=model, messages=messages, temperature=temperature
+            )
             break
         except Exception as e:
             log(f"OpenAI Error: {e}", type="error", log=debug)
@@ -391,9 +351,9 @@ def text_completion(
 
 
 def function_completion(
-    text,
-    system_message=None,
+    text=None,
     messages=None,
+    system_message=None,
     functions=None,
     model_failure_retries=5,
     function_call=None,
@@ -402,7 +362,7 @@ def function_completion(
     model=None,
     api_key=None,
     debug=DEBUG,
-    temperature=0.0
+    temperature=0.0,
 ):
     """
     Send text and a list of functions to the model and return optional text and a function call.
@@ -524,7 +484,8 @@ def function_completion(
         all_messages += messages
 
     # Prepare the messages to be sent to the API
-    all_messages.append({"role": "user", "content": text})
+    if text is not None and text != "":
+        all_messages.append({"role": "user", "content": text})
 
     log(
         f"Prompt:\n{text}\n\nFunctions:\n{json.dumps(functions, indent=4)}",
@@ -543,15 +504,26 @@ def function_completion(
                     messages=all_messages,
                     functions=functions,
                     function_call=function_call,
-                    temperature=temperature
+                    temperature=temperature,
                 )
+                print('***** openai response')
+                print(response)
                 if not response.get("choices") or response["choices"][0] is None:
                     log("No choices in response", type="error", log=debug)
                     continue
                 break
             except Exception as e:
+                print('**** ERROR')
+                print(e)
                 log(f"OpenAI Error: {e}", type="error", log=debug)
             time.sleep(1)
+        # Check if we have a valid response from the model
+        print('***** response')
+        print(response)
+        print('***** functions')
+        print(functions)
+        print('***** function_call')
+        print(function_call)
         if validate_functions(response, functions, function_call):
             break
         time.sleep(1)

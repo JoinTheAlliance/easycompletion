@@ -1,7 +1,6 @@
 from .model import (
     function_completion,
     text_completion,
-    compose_function,
     chat_completion
 )
 
@@ -13,6 +12,7 @@ from .prompt import (
     trim_prompt,
     chunk_prompt,
     count_tokens,
+    compose_function,
     get_tokens,
 )
 
