@@ -1,14 +1,14 @@
 import re
 import tiktoken
 
-from .constants import DEFAULT_TEXT_MODEL, DEFAULT_CHUNK_LENGTH, DEBUG
+from .constants import TEXT_MODEL, DEFAULT_CHUNK_LENGTH, DEBUG
 from .logger import log
 
 
 def trim_prompt(
     text,
     max_tokens=DEFAULT_CHUNK_LENGTH,
-    model=DEFAULT_TEXT_MODEL,
+    model=TEXT_MODEL,
     preserve_top=True,
     debug=DEBUG,
 ):
@@ -93,7 +93,7 @@ def chunk_prompt(prompt, chunk_length=DEFAULT_CHUNK_LENGTH, debug=DEBUG):
     return prompt_chunks
 
 
-def count_tokens(prompt: str, model=DEFAULT_TEXT_MODEL) -> int:
+def count_tokens(prompt: str, model=TEXT_MODEL) -> int:
     """
     Count the number of tokens in a string.
 
@@ -118,7 +118,7 @@ def count_tokens(prompt: str, model=DEFAULT_TEXT_MODEL) -> int:
     return length
 
 
-def get_tokens(prompt: str, model=DEFAULT_TEXT_MODEL) -> list:
+def get_tokens(prompt: str, model=TEXT_MODEL) -> list:
     """
     Returns a list of tokens in a string.
 

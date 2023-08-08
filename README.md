@@ -38,6 +38,16 @@ response = function_completion(text="Write a song about AI", functions=[test_fun
 print(response["arguments"]["lyrics"])
 ```
 
+# Using With Llama v2 and Local Models
+easycompletion has been tested with LocalAI [LocalAI](https://localai.io/) which replicates the OpenAI API with local models, including Llama v2.
+
+Follow instructions for setting up LocalAI and then set the following environment variable:
+
+```bash
+export EASYCOMPLETION_API_ENDPOINT=localhost:8000
+```
+
+
 # Basic Usage
 
 ## Compose Prompt
@@ -206,7 +216,7 @@ The response object looks like this:
 }
 ```
 
-### `trim_prompt(text, max_tokens=DEFAULT_CHUNK_LENGTH, model=DEFAULT_TEXT_MODEL, preserve_top=True)`
+### `trim_prompt(text, max_tokens=DEFAULT_CHUNK_LENGTH, model=TEXT_MODEL, preserve_top=True)`
 
 Trim the given text to a maximum number of tokens.
 
@@ -222,7 +232,7 @@ Split the given prompt into chunks where each chunk has a maximum number of toke
 prompt_chunks = chunk_prompt("This is a test. I am writing a function.", 4)
 ```
 
-### `count_tokens(prompt, model=DEFAULT_TEXT_MODEL)`
+### `count_tokens(prompt, model=TEXT_MODEL)`
 
 Count the number of tokens in a string.
 
@@ -230,7 +240,7 @@ Count the number of tokens in a string.
 num_tokens = count_tokens("This is a test.")
 ```
 
-### `get_tokens(prompt, model=DEFAULT_TEXT_MODEL)`
+### `get_tokens(prompt, model=TEXT_MODEL)`
 
 Returns a list of tokens in a string.
 
@@ -248,13 +258,13 @@ prompt = compose_prompt("Hello {{name}}!", {"name": "John"})
 
 ## A note about models
 
-You can pass in a model using the `model` parameter of either function_completion or text_completion. If you do not pass in a model, the default model will be used. You can also override this by setting the environment model via `OPENAI_MODEL` environment variable.
+You can pass in a model using the `model` parameter of either function_completion or text_completion. If you do not pass in a model, the default model will be used. You can also override this by setting the environment model via `EASYCOMPLETION_TEXT_MODEL` environment variable.
 
 Default model is gpt-turbo-3.5-0613.
 
 ## A note about API keys
 
-You can pass in an API key using the `api_key` parameter of either function_completion or text_completion. If you do not pass in an API key, the `OPENAI_API_KEY` environment variable will be checked.
+You can pass in an API key using the `api_key` parameter of either function_completion or text_completion. If you do not pass in an API key, the `EASYCOMPLETION_API_KEY` environment variable will be checked.
 
 # Publishing
 

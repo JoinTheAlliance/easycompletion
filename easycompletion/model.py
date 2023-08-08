@@ -11,9 +11,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from .constants import (
-    DEFAULT_TEXT_MODEL,
+    EASYCOMPLETION_API_ENDPOINT,
+    TEXT_MODEL,
     LONG_TEXT_MODEL,
-    OPENAI_API_KEY,
+    EASYCOMPLETION_API_KEY,
     DEFAULT_CHUNK_LENGTH,
     DEBUG,
 )
@@ -22,9 +23,8 @@ from .logger import log
 
 from .prompt import count_tokens
 
-# Set the OpenAI API key
-openai.api_key = OPENAI_API_KEY
-
+openai.api_key = EASYCOMPLETION_API_KEY
+openai.api_base = EASYCOMPLETION_API_ENDPOINT
 
 def parse_arguments(arguments, debug=DEBUG):
     """
@@ -170,7 +170,7 @@ def chat_completion(
     Parameters:
         messages (str): Messages to send to the model. In the form {<role>: string, <content>: string} - roles are "user" and "assistant"
         model_failure_retries (int, optional): Number of retries if the request fails. Default is 5.
-        model (str, optional): The model to use. Default is the DEFAULT_TEXT_MODEL defined in constants.py.
+        model (str, optional): The model to use. Default is the TEXT_MODEL defined in constants.py.
         chunk_length (int, optional): Maximum length of text chunk to process. Default is defined in constants.py.
         api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
 
@@ -187,7 +187,7 @@ def chat_completion(
 
     # Use the default model if no model is specified
     if model == None:
-        model = DEFAULT_TEXT_MODEL
+        model = TEXT_MODEL
 
     # Count tokens in the input text
     total_tokens = count_tokens(messages, model=model)
@@ -265,7 +265,7 @@ def text_completion(
     Parameters:
         text (str): Text to send to the model.
         model_failure_retries (int, optional): Number of retries if the request fails. Default is 5.
-        model (str, optional): The model to use. Default is the DEFAULT_TEXT_MODEL defined in constants.py.
+        model (str, optional): The model to use. Default is the TEXT_MODEL defined in constants.py.
         chunk_length (int, optional): Maximum length of text chunk to process. Default is defined in constants.py.
         api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
 
@@ -282,7 +282,7 @@ def text_completion(
 
     # Use the default model if no model is specified
     if model == None:
-        model = DEFAULT_TEXT_MODEL
+        model = TEXT_MODEL
 
     # Count tokens in the input text
     total_tokens = count_tokens(text, model=model)
@@ -376,8 +376,8 @@ def function_completion(
         function_call (str | dict | None): 'auto' to let the model decide, or a function name or a dictionary containing the function name (default is "auto").
         function_failure_retries (int): Number of times to retry the request if the function call is invalid (default is 10).
         chunk_length (int): The length of each chunk to be processed.
-        model (str | None): The model to use (default is the DEFAULT_TEXT_MODEL, i.e. gpt-3.5-turbo).
-        api_key (str | None): If you'd like to pass in a key to override the environment variable OPENAI_API_KEY.
+        model (str | None): The model to use (default is the TEXT_MODEL, i.e. gpt-3.5-turbo).
+        api_key (str | None): If you'd like to pass in a key to override the environment variable EASYCOMPLETION_API_KEY.
 
     Returns:
         dict: On most errors, returns a dictionary with an "error" key. On success, returns a dictionary containing
@@ -448,7 +448,7 @@ def function_completion(
 
     # Use the default text model if no model is specified
     if model is None:
-        model = DEFAULT_TEXT_MODEL
+        model = TEXT_MODEL
 
     # Count the number of tokens in the message
     message_tokens = count_tokens(text, model=model)
