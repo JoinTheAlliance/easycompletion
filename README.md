@@ -1,4 +1,4 @@
-# easycompletion <a href="https://discord.gg/qetWd7J9De"><img style="float: right" src="https://dcbadge.vercel.app/api/server/qetWd7J9De" alt=""></a>
+# easycompletion <a href="https://discord.gg/qetWd7J9De"><img style="float: right" src="https://dcbadge.vercel.app/api/server/qetWd7J9De" alt=""></a> <a href="https://github.com/AutonomousResearchGroup/agentagenda/stargazers"><img style="float: right; padding: 5px;" src="https://img.shields.io/github/stars/AutonomousResearchGroup/agentagenda?style=social" alt=""></a>
 
 Easy text and chat completion, as well as function calling. Also includes useful utilities for counting tokens, composing prompts and trimming them to fit within the token limit.
 
@@ -6,6 +6,8 @@ Easy text and chat completion, as well as function calling. Also includes useful
 
 [![Lint and Test](https://github.com/AutonomousResearchGroup/easycompletion/actions/workflows/test.yml/badge.svg)](https://github.com/AutonomousResearchGroup/easycompletion/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/easycompletion.svg)](https://badge.fury.io/py/easycompletion)
+[![License](https://img.shields.io/badge/License-MIT-blue)](https://github.com/AutonomousResearchGroup/agentagenda/blob/main/LICENSE)
+[![forks - agentagenda](https://img.shields.io/github/forks/AutonomousResearchGroup/agentagenda?style=social)](https://github.com/AutonomousResearchGroup/agentagenda)
 
 # Installation
 
