@@ -3,7 +3,7 @@ name: Lint and Test
 on: [push]
 
 env:
-  EASYCOMPLETION_API_KEY: ${{ secrets.EASYCOMPLETION_API_KEY }}
+  EASYCOMPLETION_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
 jobs:
   build:
