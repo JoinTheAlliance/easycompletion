@@ -47,6 +47,12 @@ Follow instructions for setting up LocalAI and then set the following environmen
 export EASYCOMPLETION_API_ENDPOINT=localhost:8000
 ```
 
+# Debugging
+You can very easycompletion logs by setting the following environment variable:
+
+```bash
+export EASYCOMPLETION_DEBUG=True
+```
 
 # Basic Usage
 
