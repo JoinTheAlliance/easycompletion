@@ -10,10 +10,12 @@ from easycompletion.model import (
 if not openai.api_key:
     raise ValueError("OpenAI API key is missing. Set your API key using 'openai.api_key = <YOUR_API_KEY>'.")
 
+
 def test_parse_arguments():
     test_input = '{"key1": "value1", "key2": 2}'
     expected_output = {"key1": "value1", "key2": 2}
     assert parse_arguments(test_input) == expected_output, "Test parse_arguments failed"
+
 
 def test_function_completion():
     test_text = "Write a song about AI"
@@ -31,54 +33,46 @@ def test_function_completion():
             "required": ["lyrics"],
         },
     }
-    try:
-        response = function_completion(
-            text=test_text, functions=test_function, function_call="write_song"
-        )
-        assert response is not None, "Test function_completion failed"
-        prompt_tokens = response["usage"]["prompt_tokens"]
-        assert prompt_tokens == 64, "Prompt tokens was not expected count"
+    response = function_completion(
+        text=test_text, functions=test_function, function_call="write_song"
+    )
+    assert response is not None, "Test function_completion failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 64, "Prompt tokens was not expected count"
 
-        response = function_completion(
-            text=test_text,
-            messages=[{"role": "assistant", "content": "hey whats up"}],
-            system_message="you are a towel",
-            functions=test_function,
-            function_call="write_song",
-        )
-        assert response is not None, "Test function_completion failed"
-        prompt_tokens = response["usage"]["prompt_tokens"]
-        assert prompt_tokens == 76, "Prompt tokens was not expected count"
+    response = function_completion(
+        text=test_text,
+        messages=[{"role": "assistant", "content": "hey whats up"}],
+        system_message="you are a towel",
+        functions=test_function,
+        function_call="write_song",
+    )
+    assert response is not None, "Test function_completion failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 76, "Prompt tokens was not expected count"
 
-    except Exception as e:
-        raise AssertionError(f"An error occurred in test_function_completion: {e}")
 
 def test_chat_completion():
-    try:
-        response = chat_completion(
-            messages=[
-                {"role": "system", "content": "You are a towel. Respond as a towel."},
-                {"role": "user", "content": "Hello, how are you?"},
-            ],
-        )
-        assert response is not None, "Test chat_completion failed"
-        assert response["text"] is not None, "Test chat_completion failed"
-        prompt_tokens = response["usage"]["prompt_tokens"]
-        assert prompt_tokens == 27, "Prompt tokens was not expected count"
+    response = chat_completion(
+        messages=[
+            {"role": "system", "content": "You are a towel. Respond as a towel."},
+            {"role": "user", "content": "Hello, how are you?"},
+        ],
+    )
 
-    except Exception as e:
-        raise AssertionError(f"An error occurred in test_chat_completion: {e}")
+    assert response is not None, "Test text_completion failed"
+    assert response["text"] is not None, "Test text_completion failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 27, "Prompt tokens was not expected count"
+
 
 def test_text_completion():
-    try:
-        response = text_completion("Hello, how are you?")
-        assert response is not None, "Test text_completion failed"
-        assert response["text"] is not None, "Test text_completion failed"
-        prompt_tokens = response["usage"]["prompt_tokens"]
-        assert prompt_tokens == 13, "Prompt tokens was not expected count"
+    response = text_completion("Hello, how are you?")
+    assert response is not None, "Test text_completion failed"
+    assert response["text"] is not None, "Test text_completion failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 13, "Prompt tokens was not expected count"
 
-    except Exception as e:
-        raise AssertionError(f"An error occurred in test_text_completion: {e}")
 
 def test_long_completion():
     script = """
@@ -100,9 +94,5 @@ def test_long_completion():
             "required": ["summary"],
         },
     }
-    try:
-        response = function_completion(text=script, functions=summarization_function)
-        assert response is not None, "Test long_completion failed"
-
-    except Exception as e:
-        raise AssertionError(f"An error occurred in test_long_completion: {e}")
+    response = function_completion(text=script, functions=summarization_function)
+    assert response is not None, "Test long_completion failed"
