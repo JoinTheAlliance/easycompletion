@@ -224,3 +224,21 @@ def compose_function(name, description, properties, required_properties, debug=D
     log(f"Function:\n{str(function)}", type="info", log=debug)
     return function
 
+# New function added
+
+def function_completion(function_call: str, model=TEXT_MODEL) -> int:
+    """
+    Count the number of tokens in a function call.
+
+    Args:
+        function_call: The function call string to be tokenized.
+        model: The model to use for tokenization.
+
+    Returns:
+        The number of tokens in the input function call.
+
+    Example:
+        function_completion("compose_function(name='summarize_text', description='Summarize the text.')")
+        Output: Number of tokens in the given function call.
+    """
+    return count_tokens(function_call, model)
