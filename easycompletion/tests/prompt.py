@@ -6,6 +6,7 @@ from easycompletion.prompt import (
     count_tokens,
     get_tokens,
     compose_function,
+    function_completion,  # Add the new function to the imports
 )
 
 
@@ -67,3 +68,9 @@ def test_compose_function():
     assert (
         composed_summarization_function == summarization_function
     ), "Test compose_function failed"
+
+
+def test_function_completion():  # Add a new test case for function_completion
+    function_call = "compose_function(name='summarize_text', description='Summarize the text.')"
+    expected_token_count = 11  # Replace this with the actual expected token count
+    assert function_completion(function_call) == expected_token_count, "Test function_completion failed"
