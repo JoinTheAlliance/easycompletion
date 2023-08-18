@@ -2,19 +2,6 @@ from .prompt import count_tokens
 
 openai.api_base = EASYCOMPLETION_API_ENDPOINT
 
-def validate_api_key(api_key=None):
-    """
-    Validates the OpenAI API key.
-    Parameters:
-        api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
-    Returns:
-        bool: True if the API key is valid, False otherwise.
-    """
-    if api_key is None:
-        api_key = EASYCOMPLETION_API_KEY
-
-    return api_key is not None and api_key.strip() != ""
-
 def parse_arguments(arguments, debug=DEBUG):
     """
     Parses arguments that are expected to be either a JSON string, dictionary, or a list.
