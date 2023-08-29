@@ -1,9 +1,14 @@
+import openai
 from easycompletion.model import (
     chat_completion,
     parse_arguments,
     function_completion,
     text_completion,
 )
+
+# Check if the OpenAI API key is set
+if not openai.api_key:
+    raise ValueError("OpenAI API key is missing. Set your API key using 'openai.api_key = <YOUR_API_KEY>'.")
 
 
 def test_parse_arguments():
