@@ -25,21 +25,6 @@ from .prompt import count_tokens
 
 openai.api_base = EASYCOMPLETION_API_ENDPOINT
 
-def validate_api_key(api_key=None):
-    """
-    Validates the OpenAI API key.
-
-    Parameters:
-        api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
-
-    Returns:
-        bool: True if the API key is valid, False otherwise.
-    """
-    if api_key is None:
-        api_key = EASYCOMPLETION_API_KEY
-
-    return api_key is not None and api_key.strip() != ""
-
 def parse_arguments(arguments, debug=DEBUG):
     """
     Parses arguments that are expected to be either a JSON string, dictionary, or a list.
@@ -173,7 +158,7 @@ def chat_completion(
     model_failure_retries=5,
     model=None,
     chunk_length=DEFAULT_CHUNK_LENGTH,
-    api_key=None,
+    api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
     temperature=0.0,
 ):
@@ -194,7 +179,7 @@ def chat_completion(
         >>> text_completion("Hello, how are you?", model_failure_retries=3, model='gpt-3.5-turbo', chunk_length=1024, api_key='your_openai_api_key')
     """
     # Validate the API key
-    if not validate_api_key(api_key):
+    if not api_key.strip():
         return {"error": "Invalid OpenAI API key"}
 
     openai.api_key = api_key
@@ -269,7 +254,7 @@ def text_completion(
     model_failure_retries=5,
     model=None,
     chunk_length=DEFAULT_CHUNK_LENGTH,
-    api_key=None,
+    api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
     temperature=0.0,
 ):
@@ -374,7 +359,7 @@ def function_completion(
     function_failure_retries=10,
     chunk_length=DEFAULT_CHUNK_LENGTH,
     model=None,
-    api_key=None,
+    api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
     temperature=0.0,
 ):
