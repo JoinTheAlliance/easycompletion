@@ -196,10 +196,17 @@ def do_chat_completion(
     response = None
     for i in range(model_failure_retries):
         try:
-            response = openai.ChatCompletion.create(
-                model=model, messages=messages, temperature=temperature,
-                functions=functions, function_call=function_call,
-            )
+            if functions is not None:
+                response = openai.ChatCompletion.create(
+                    model=model, messages=messages, temperature=temperature,
+                    functions=functions, function_call=function_call,
+                )
+            else:
+                response = openai.ChatCompletion.create(
+                    model=model, messages=messages, temperature=temperature
+                )
+            print('response')
+            print(response)
             break
         except Exception as e:
             log(f"OpenAI Error: {e}", type="error", log=debug)
