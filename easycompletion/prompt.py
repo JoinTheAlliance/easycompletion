@@ -108,6 +108,12 @@ def count_tokens(prompt: str, model=TEXT_MODEL) -> int:
         count_tokens("This is a test.")
         Output: 5
     """
+    if not prompt:
+        return 0
+    if isinstance(prompt, (list, tuple)):
+        return sum(count_tokens(p, model) for p in prompt)
+    if isinstance(prompt, dict):
+        return sum(count_tokens(v) for v in prompt.values())
     if not isinstance(prompt, str):
         prompt = str(prompt)
 
