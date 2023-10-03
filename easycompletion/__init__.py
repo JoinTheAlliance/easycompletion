@@ -1,7 +1,10 @@
 from .model import (
     function_completion,
+    function_completion_async,
     text_completion,
-    chat_completion
+    text_completion_async,
+    chat_completion,
+    chat_completion_async
 )
 
 openai_function_call = function_completion
