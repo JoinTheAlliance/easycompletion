@@ -2,8 +2,11 @@ from easycompletion.model import (
     chat_completion,
     parse_arguments,
     function_completion,
+    function_completion_async,
     text_completion,
+    text_completion_async,
 )
+import pytest
 
 
 def test_parse_arguments():
@@ -11,6 +14,49 @@ def test_parse_arguments():
     expected_output = {"key1": "value1", "key2": 2}
     assert parse_arguments(test_input) == expected_output, "Test parse_arguments failed"
 
+@pytest.mark.asyncio
+async def test_text_completion_async():
+    response = await text_completion_async("Hello, how are you?")
+    assert response is not None, "Test text_completion_async failed"
+    assert response["text"] is not None, "Test text_completion_async failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 13, "Prompt tokens was not the expected count"
+
+
+@pytest.mark.asyncio
+async def test_function_completion_async():
+    test_text = "Write a song about AI"
+    test_function = {
+        "name": "write_song",
+        "description": "Write a song about AI",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "lyrics": {
+                    "type": "string",
+                    "description": "The lyrics for the song",
+                }
+            },
+            "required": ["lyrics"],
+        },
+    }
+    response = await function_completion_async(
+        text=test_text, functions=test_function, function_call="write_song"
+    )
+    assert response is not None, "Test function_completion_async failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 64, "Prompt tokens was not the expected count"
+
+    response = await function_completion_async(
+        text=test_text,
+        messages=[{"role": "assistant", "content": "hey whats up"}],
+        system_message="you are a towel",
+        functions=test_function,
+        function_call="write_song",
+    )
+    assert response is not None, "Test function_completion_async failed"
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    assert prompt_tokens == 76, "Prompt tokens was not the expected count"
 
 def test_function_completion():
     test_text = "Write a song about AI"
