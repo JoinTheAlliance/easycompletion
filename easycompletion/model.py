@@ -573,6 +573,13 @@ def function_completion(
         print(response)
         if validate_functions(response, functions, function_call):
             break
+        if response.get("choices", [{}])[0].get("finish_reason", None) == 'length':
+            return {
+                "text": None,
+                "usage": response.usage,
+                "finish_reason": 'length',
+                "error": "Message too long",
+            }
         time.sleep(1)
 
     # Check if we have a valid response from the model
@@ -742,6 +749,13 @@ async def function_completion_async(
         print(response)
         if validate_functions(response, functions, function_call):
             break
+        if response.get("choices", [{}])[0].get("finish_reason", None) == 'length':
+            return {
+                "text": None,
+                "usage": response.usage,
+                "finish_reason": 'length',
+                "error": "Message too long",
+            }
         time.sleep(1)
 
     # Check if we have a valid response from the model
