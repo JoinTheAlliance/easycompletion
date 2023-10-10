@@ -7,6 +7,7 @@ import ast
 import asyncio
 
 from dotenv import load_dotenv
+import tiktoken
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,9 +16,12 @@ from .constants import (
     EASYCOMPLETION_API_ENDPOINT,
     TEXT_MODEL,
     LONG_TEXT_MODEL,
+    LONG_TEXT_MODEL_WINDOW,
     EASYCOMPLETION_API_KEY,
     DEFAULT_CHUNK_LENGTH,
+    DEFAULT_MODEL_INFO,
     DEBUG,
+    SUPPRESS_WARNINGS,
 )
 
 from .logger import log
@@ -154,47 +158,84 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
     log("Function call is valid", type="success", log=debug)
     return True
 
-def sanity_check(prompt, model=None, chunk_length=DEFAULT_CHUNK_LENGTH, api_key=EASYCOMPLETION_API_KEY, debug=DEBUG):
+
+def is_long_model(model_name):
+    return "16k" in model_name
+
+
+def sanity_check(prompt, model=None, model_info=None, chunk_length=DEFAULT_CHUNK_LENGTH, api_key=EASYCOMPLETION_API_KEY, debug=DEBUG):
     # Validate the API key
     if not api_key.strip():
-        return model, {"error": "Invalid OpenAI API key"}
+        return [], {"error": "Invalid OpenAI API key"}
 
     openai.api_key = api_key
+    # Construct a model_info from legacy parameters
+    if chunk_length not in (None, DEFAULT_CHUNK_LENGTH):
+        log("Warning: deprecated use of chuck_length. Please use model_info.",
+            str="warning", log=not SUPPRESS_WARNINGS)
+    else:
+        chunk_length = chunk_length or DEFAULT_CHUNK_LENGTH
+    if model is not None:
+        if model == TEXT_MODEL and chunk_length == DEFAULT_CHUNK_LENGTH:
+            log("Warning: deprecated use of model, use model_info",
+                str="warning", log=not SUPPRESS_WARNINGS)
+            model_info = DEFAULT_MODEL_INFO
+        else:
+            log("Warning: deprecated use of model. Assuming long_model allowed. Use model_info otherwise.",
+                str="warning", log=not SUPPRESS_WARNINGS)
+            model_info = ((model, chunk_length), (LONG_TEXT_MODEL, LONG_TEXT_MODEL_WINDOW - DEFAULT_CHUNK_LENGTH))
+    elif chunk_length != DEFAULT_CHUNK_LENGTH:
+        log("Warning: deprecated use of chuck_length. Please use model_info.",
+            str="warning", log=not SUPPRESS_WARNINGS)
+        model_info = ((TEXT_MODEL, chunk_length), (LONG_TEXT_MODEL, LONG_TEXT_MODEL_WINDOW - chunk_length))
+    else:
+        model_info = model_info or DEFAULT_MODEL_INFO
 
-    # Count tokens in the input text
-    total_tokens = count_tokens(prompt, model=model)
+    model_info = sorted(model_info, key=lambda i: i[1])
 
-    # If text is longer than chunk_length and model is not for long texts, switch to the long text model
-    if total_tokens > chunk_length and "16k" not in model:
-        model = LONG_TEXT_MODEL
-        if not os.environ.get("SUPPRESS_WARNINGS"):
-            print(
-                "Warning: Message is long. Using 16k model (to hide this message, set SUPPRESS_WARNINGS=1)"
-            )
+    # Names of long enough models
+    models = []
+    len_by_encoding = {}
+    len_by_model = {}
+    for model, chunk_length in model_info:
+        encoding = tiktoken.encoding_for_model(model)
+        if encoding not in len_by_encoding:
+            # Count of tokens in the input text
+            len_by_encoding[encoding] = count_tokens(prompt, model=model)
+        len_by_model[model] = (token_len := len_by_encoding[encoding])
+        if token_len <= chunk_length:
+            models.append(model)
 
     # If text is too long even for long text model, return None
-    if total_tokens > (16384 - chunk_length):
+    if not models:
         print("Error: Message too long")
-        return model, {
+        return models, {
             "text": None,
             "usage": None,
             "finish_reason": None,
             "error": "Message too long",
         }
 
+    if models[0] != model_info[0][0]:
+        log("Warning: Message is long. Using larger models (to hide this message, set SUPPRESS_WARNINGS=1)",
+            str="warning", log=not SUPPRESS_WARNINGS)
+
+    total_tokens = len_by_model[models[0]]  # First appropriate model
+
     if isinstance(prompt, dict):
         for key, value in prompt.items():
             if value:
-                log(f"Prompt {key} ({count_tokens(value)} tokens):\n{str(value)}", type="prompt", log=debug)
+                log(f"Prompt {key} ({count_tokens(value, model=models[0])} tokens):\n{str(value)}", type="prompt", log=debug)
     else:
         log(f"Prompt ({total_tokens} tokens):\n{str(prompt)}", type="prompt", log=debug)
 
-    return model, None
+    return models, None
 
 def do_chat_completion(
-        messages, model=TEXT_MODEL, temperature=0.8, functions=None, function_call=None, model_failure_retries=5, debug=DEBUG):
+        messages, models, temperature=0.8, functions=None, function_call=None, model_failure_retries=5, debug=DEBUG):
     # Try to make a request for a specified number of times
     response = None
+    model = models[0]
     for i in range(model_failure_retries):
         try:
             if functions is not None:
@@ -206,11 +247,27 @@ def do_chat_completion(
                 response = openai.ChatCompletion.create(
                     model=model, messages=messages, temperature=temperature
                 )
-            print('response')
-            print(response)
+            log('response', log=debug)
+            log(response, log=debug)
             break
         except Exception as e:
             log(f"OpenAI Error: {e}", type="error", log=debug)
+
+    # Check if failed for length reasons.
+    choices = response.get("choices", [])
+    if choices and all(choice.get("finish_reason", None) == 'length' for choice in choices):
+        models.pop(0)  # Side effect: Do not ever retry that model on that prompt
+        if models:
+            log("Failed because of length, trying next model", log=debug)
+            return do_chat_completion(messages, models, temperature, functions, function_call, model_failure_retries, debug)
+        return None, {
+            "text": None,
+            "usage": None,
+            "finish_reason": 'length',
+            "error": "Error: The prompt elicits too-long responses",
+        }
+
+    # TODO: Are there other reasons to try fallback models?
 
     # If response is not valid, print an error message and return None
     if (
@@ -230,6 +287,7 @@ def chat_completion(
     messages,
     model_failure_retries=5,
     model=None,
+    model_info=None,
     chunk_length=DEFAULT_CHUNK_LENGTH,
     api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
@@ -241,8 +299,9 @@ def chat_completion(
     Parameters:
         messages (str): Messages to send to the model. In the form {<role>: string, <content>: string} - roles are "user" and "assistant"
         model_failure_retries (int, optional): Number of retries if the request fails. Default is 5.
-        model (str, optional): The model to use. Default is the TEXT_MODEL defined in constants.py.
-        chunk_length (int, optional): Maximum length of text chunk to process. Default is defined in constants.py.
+        model (str, optional): The model to use. Deprecated.
+        chunk_length (int, optional): Maximum length of text chunk to process. Deprecated.
+        model_info (List[Tuple[str, int]], optional): The list of models to use, and their respective chuck length. Default is the DEFAULT_MODEL_INFO defined in constants.py.
         api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
 
     Returns:
@@ -254,14 +313,14 @@ def chat_completion(
     openai.api_key = api_key
 
     # Use the default model if no model is specified
-    model = model or TEXT_MODEL
-    model, error = sanity_check(messages, model=model, chunk_length=chunk_length, api_key=api_key, debug=debug)
+
+    models, error = sanity_check(messages, model_info=model_info, model=model, chunk_length=chunk_length, api_key=api_key, debug=debug)
     if error:
         return error
 
     # Try to make a request for a specified number of times
     response, error = do_chat_completion(
-        model=model, messages=messages, temperature=temperature, model_failure_retries=model_failure_retries, debug=debug)
+        messages, models, temperature=temperature, model_failure_retries=model_failure_retries, debug=debug)
 
     if error:
         return error
@@ -283,6 +342,7 @@ async def chat_completion_async(
     messages,
     model_failure_retries=5,
     model=None,
+    model_info=None,
     chunk_length=DEFAULT_CHUNK_LENGTH,
     api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
@@ -294,8 +354,9 @@ async def chat_completion_async(
     Parameters:
         messages (str): Messages to send to the model. In the form {<role>: string, <content>: string} - roles are "user" and "assistant"
         model_failure_retries (int, optional): Number of retries if the request fails. Default is 5.
-        model (str, optional): The model to use. Default is the TEXT_MODEL defined in constants.py.
-        chunk_length (int, optional): Maximum length of text chunk to process. Default is defined in constants.py.
+        model (str, optional): The model to use. Deprecated.
+        chunk_length (int, optional): Maximum length of text chunk to process. Deprecated.
+        model_info (List[Tuple[str, int]], optional): The list of models to use, and their respective chuck length. Default is the DEFAULT_MODEL_INFO defined in constants.py.
         api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
 
     Returns:
@@ -307,13 +368,13 @@ async def chat_completion_async(
 
     # Use the default model if no model is specified
     model = model or TEXT_MODEL
-    model, error = sanity_check(messages, model=model, chunk_length=chunk_length, api_key=api_key, debug=debug)
+    models, error = sanity_check(messages, model_info=model_info, model=model, chunk_length=chunk_length, api_key=api_key, debug=debug)
     if error:
         return error
 
     # Try to make a request for a specified number of times
     response, error = await asyncio.to_thread(lambda: do_chat_completion(
-        model=model, messages=messages, temperature=temperature, model_failure_retries=model_failure_retries, debug=debug))
+        messages, models, temperature=temperature, model_failure_retries=model_failure_retries, debug=debug))
 
     if error:
         return error
@@ -335,6 +396,7 @@ def text_completion(
     text,
     model_failure_retries=5,
     model=None,
+    model_info=None,
     chunk_length=DEFAULT_CHUNK_LENGTH,
     api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
@@ -346,8 +408,9 @@ def text_completion(
     Parameters:
         text (str): Text to send to the model.
         model_failure_retries (int, optional): Number of retries if the request fails. Default is 5.
-        model (str, optional): The model to use. Default is the TEXT_MODEL defined in constants.py.
-        chunk_length (int, optional): Maximum length of text chunk to process. Default is defined in constants.py.
+        model (str, optional): The model to use. Deprecated.
+        chunk_length (int, optional): Maximum length of text chunk to process. Deprecated.
+        model_info (List[Tuple[str, int]], optional): The list of models to use, and their respective chuck length. Default is the DEFAULT_MODEL_INFO defined in constants.py.
         api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
 
     Returns:
@@ -358,8 +421,7 @@ def text_completion(
     """
 
     # Use the default model if no model is specified
-    model = model or TEXT_MODEL
-    model, error = sanity_check(text, model=model, chunk_length=chunk_length, api_key=api_key, debug=debug)
+    models, error = sanity_check(text, model_info=model_info, model=model, chunk_length=chunk_length, api_key=api_key, debug=debug)
     if error:
         return error
 
@@ -368,7 +430,7 @@ def text_completion(
 
     # Try to make a request for a specified number of times
     response, error = do_chat_completion(
-        model=model, messages=messages, temperature=temperature, model_failure_retries=model_failure_retries, debug=debug)
+        messages, models, temperature=temperature, model_failure_retries=model_failure_retries, debug=debug)
     if error:
         return error
 
@@ -388,6 +450,7 @@ async def text_completion_async(
     text,
     model_failure_retries=5,
     model=None,
+    model_info=None,
     chunk_length=DEFAULT_CHUNK_LENGTH,
     api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
@@ -399,8 +462,9 @@ async def text_completion_async(
     Parameters:
         text (str): Text to send to the model.
         model_failure_retries (int, optional): Number of retries if the request fails. Default is 5.
-        model (str, optional): The model to use. Default is the TEXT_MODEL defined in constants.py.
-        chunk_length (int, optional): Maximum length of text chunk to process. Default is defined in constants.py.
+        model (str, optional): The model to use. Deprecated.
+        chunk_length (int, optional): Maximum length of text chunk to process. Deprecated.
+        model_info (List[Tuple[str, int]], optional): The list of models to use, and their respective chuck length. Default is the DEFAULT_MODEL_INFO defined in constants.py.
         api_key (str, optional): OpenAI API key. If not provided, it uses the one defined in constants.py.
 
     Returns:
@@ -411,8 +475,7 @@ async def text_completion_async(
     """
 
     # Use the default model if no model is specified
-    model = model or TEXT_MODEL
-    model, error = sanity_check(text, model=model, chunk_length=chunk_length, api_key=api_key, debug=debug)
+    models, error = sanity_check(text, model_info=model_info, model=model, chunk_length=chunk_length, api_key=api_key, debug=debug)
     if error:
         return error
 
@@ -421,7 +484,7 @@ async def text_completion_async(
 
     # Try to make a request for a specified number of times
     response, error = await asyncio.to_thread(lambda: do_chat_completion(
-        model=model, messages=messages, temperature=temperature, model_failure_retries=model_failure_retries, debug=debug))
+        messages, models, temperature=temperature, model_failure_retries=model_failure_retries, debug=debug))
 
     if error:
         return error
@@ -449,6 +512,7 @@ def function_completion(
     function_failure_retries=10,
     chunk_length=DEFAULT_CHUNK_LENGTH,
     model=None,
+    model_info=None,
     api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
     temperature=0.0,
@@ -464,8 +528,9 @@ def function_completion(
         model_failure_retries (int): Number of times to retry the request if it fails (default is 5).
         function_call (str | dict | None): 'auto' to let the model decide, or a function name or a dictionary containing the function name (default is "auto").
         function_failure_retries (int): Number of times to retry the request if the function call is invalid (default is 10).
-        chunk_length (int): The length of each chunk to be processed.
-        model (str | None): The model to use (default is the TEXT_MODEL, i.e. gpt-3.5-turbo).
+        model (str, optional): The model to use. Deprecated.
+        chunk_length (int, optional): Maximum length of text chunk to process. Deprecated.
+        model_info (List[Tuple[str, int]], optional): The list of models to use, and their respective chuck length. Default is the DEFAULT_MODEL_INFO defined in constants.py.
         api_key (str | None): If you'd like to pass in a key to override the environment variable EASYCOMPLETION_API_KEY.
 
     Returns:
@@ -476,9 +541,6 @@ def function_completion(
         >>> function = {'name': 'function1', 'parameters': {'param1': 'value1'}}
         >>> function_completion("Call the function.", function)
     """
-
-    # Use the default model if no model is specified
-    model = model or TEXT_MODEL
 
     # Ensure that functions are provided
     if functions is None:
@@ -534,17 +596,17 @@ def function_completion(
                 "error": "function_call had an invalid name. Should be a string of the function name or an object with a name property"
             }
 
-    model, error = sanity_check(dict(
+    models, error = sanity_check(dict(
         text=text, functions=functions, messages=messages, system_message=system_message
-        ), model=model, chunk_length=chunk_length, api_key=api_key)
+        ), model_info=model_info, model=model, chunk_length=chunk_length, api_key=api_key)
     if error:
         return error
 
     # Count the number of tokens in the message
-    message_tokens = count_tokens(text, model=model)
+    message_tokens = count_tokens(text, model=models[0])
     total_tokens = message_tokens
 
-    function_call_tokens = count_tokens(functions, model=model)
+    function_call_tokens = count_tokens(functions, model=models[0])
     total_tokens += function_call_tokens + 3  # Additional tokens for the user
 
     all_messages = []
@@ -564,7 +626,7 @@ def function_completion(
     for _ in range(function_failure_retries):
         # Try to make a request for a specified number of times
         response, error = do_chat_completion(
-            model=model, messages=all_messages, temperature=temperature, function_call=function_call,
+            all_messages, models, temperature=temperature, function_call=function_call,
             functions=functions, model_failure_retries=model_failure_retries, debug=debug)
         if error:
             time.sleep(1)
@@ -625,6 +687,7 @@ async def function_completion_async(
     function_failure_retries=10,
     chunk_length=DEFAULT_CHUNK_LENGTH,
     model=None,
+    model_info=None,
     api_key=EASYCOMPLETION_API_KEY,
     debug=DEBUG,
     temperature=0.0,
@@ -640,8 +703,9 @@ async def function_completion_async(
         model_failure_retries (int): Number of times to retry the request if it fails (default is 5).
         function_call (str | dict | None): 'auto' to let the model decide, or a function name or a dictionary containing the function name (default is "auto").
         function_failure_retries (int): Number of times to retry the request if the function call is invalid (default is 10).
-        chunk_length (int): The length of each chunk to be processed.
-        model (str | None): The model to use (default is the TEXT_MODEL, i.e. gpt-3.5-turbo).
+        model (str, optional): The model to use. Deprecated.
+        chunk_length (int, optional): Maximum length of text chunk to process. Deprecated.
+        model_info (List[Tuple[str, int]], optional): The list of models to use, and their respective chuck length. Default is the DEFAULT_MODEL_INFO defined in constants.py.
         api_key (str | None): If you'd like to pass in a key to override the environment variable EASYCOMPLETION_API_KEY.
 
     Returns:
@@ -652,9 +716,6 @@ async def function_completion_async(
         >>> function = {'name': 'function1', 'parameters': {'param1': 'value1'}}
         >>> function_completion("Call the function.", function)
     """
-
-    # Use the default model if no model is specified
-    model = model or TEXT_MODEL
 
     # Ensure that functions are provided
     if functions is None:
@@ -710,17 +771,17 @@ async def function_completion_async(
                 "error": "function_call had an invalid name. Should be a string of the function name or an object with a name property"
             }
 
-    model, error = sanity_check(dict(
+    models, error = sanity_check(dict(
         text=text, functions=functions, messages=messages, system_message=system_message
-        ), model=model, chunk_length=chunk_length, api_key=api_key)
+        ), model_info=model_info, model=model, chunk_length=chunk_length, api_key=api_key)
     if error:
         return error
 
     # Count the number of tokens in the message
-    message_tokens = count_tokens(text, model=model)
+    message_tokens = count_tokens(text, model=models[0])
     total_tokens = message_tokens
 
-    function_call_tokens = count_tokens(functions, model=model)
+    function_call_tokens = count_tokens(functions, model=models[0])
     total_tokens += function_call_tokens + 3  # Additional tokens for the user
 
     all_messages = []
@@ -740,7 +801,7 @@ async def function_completion_async(
     for _ in range(function_failure_retries):
         # Try to make a request for a specified number of times
         response, error = await asyncio.to_thread(lambda: do_chat_completion(
-            model=model, messages=all_messages, temperature=temperature, function_call=function_call,
+            all_messages, models, temperature=temperature, function_call=function_call,
             functions=functions, model_failure_retries=model_failure_retries, debug=debug))
         if error:
             time.sleep(1)

@@ -21,6 +21,7 @@ from .prompt import (
 
 from .constants import (
     TEXT_MODEL,
+    LONG_TEXT_MODEL,
     DEFAULT_CHUNK_LENGTH,
 )
 
@@ -37,5 +38,6 @@ __all__ = [
     "count_tokens",
     "get_tokens",
     "TEXT_MODEL",
+    "LONG_TEXT_MODEL",
     "DEFAULT_CHUNK_LENGTH",
 ]
