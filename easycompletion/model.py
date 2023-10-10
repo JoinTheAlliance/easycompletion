@@ -15,6 +15,7 @@ load_dotenv()
 from .constants import (
     EASYCOMPLETION_API_ENDPOINT,
     TEXT_MODEL,
+    TEXT_MODEL_WINDOW,
     LONG_TEXT_MODEL,
     LONG_TEXT_MODEL_WINDOW,
     EASYCOMPLETION_API_KEY,
@@ -161,6 +162,13 @@ def validate_functions(response, functions, function_call, debug=DEBUG):
 
 def is_long_model(model_name):
     return "16k" in model_name
+
+def build_model_info(model_names, factor=0.75):
+    return [
+        (model_name,
+         int(factor * (LONG_TEXT_MODEL_WINDOW if is_long_model(model_name) else TEXT_MODEL_WINDOW)))
+        for model_name in model_names
+    ]
 
 
 def sanity_check(prompt, model=None, model_info=None, chunk_length=DEFAULT_CHUNK_LENGTH, api_key=EASYCOMPLETION_API_KEY, debug=DEBUG):
