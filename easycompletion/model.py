@@ -180,21 +180,21 @@ def sanity_check(prompt, model=None, model_info=None, chunk_length=DEFAULT_CHUNK
     # Construct a model_info from legacy parameters
     if chunk_length not in (None, DEFAULT_CHUNK_LENGTH):
         log("Warning: deprecated use of chuck_length. Please use model_info.",
-            str="warning", log=not SUPPRESS_WARNINGS)
+            type="warning", log=not SUPPRESS_WARNINGS)
     else:
         chunk_length = chunk_length or DEFAULT_CHUNK_LENGTH
     if model is not None:
         if model == TEXT_MODEL and chunk_length == DEFAULT_CHUNK_LENGTH:
             log("Warning: deprecated use of model, use model_info",
-                str="warning", log=not SUPPRESS_WARNINGS)
+                type="warning", log=not SUPPRESS_WARNINGS)
             model_info = DEFAULT_MODEL_INFO
         else:
             log("Warning: deprecated use of model. Assuming long_model allowed. Use model_info otherwise.",
-                str="warning", log=not SUPPRESS_WARNINGS)
+                type="warning", log=not SUPPRESS_WARNINGS)
             model_info = ((model, chunk_length), (LONG_TEXT_MODEL, LONG_TEXT_MODEL_WINDOW - DEFAULT_CHUNK_LENGTH))
     elif chunk_length != DEFAULT_CHUNK_LENGTH:
         log("Warning: deprecated use of chuck_length. Please use model_info.",
-            str="warning", log=not SUPPRESS_WARNINGS)
+            type="warning", log=not SUPPRESS_WARNINGS)
         model_info = ((TEXT_MODEL, chunk_length), (LONG_TEXT_MODEL, LONG_TEXT_MODEL_WINDOW - chunk_length))
     else:
         model_info = model_info or DEFAULT_MODEL_INFO
@@ -226,7 +226,7 @@ def sanity_check(prompt, model=None, model_info=None, chunk_length=DEFAULT_CHUNK
 
     if models[0] != model_info[0][0]:
         log("Warning: Message is long. Using larger models (to hide this message, set SUPPRESS_WARNINGS=1)",
-            str="warning", log=not SUPPRESS_WARNINGS)
+            type="warning", log=not SUPPRESS_WARNINGS)
 
     total_tokens = len_by_model[models[0]]  # First appropriate model
 
