@@ -261,6 +261,21 @@ def do_chat_completion(
         except Exception as e:
             log(f"OpenAI Error: {e}", type="error", log=debug)
 
+    # TODO: Are there other reasons to try fallback models?
+
+    # If response is not valid, print an error message and return None
+    if (
+        not response
+        or not response.get("choices")
+        or not response["choices"][0]
+    ):
+        return None, {
+            "text": None,
+            "usage": None,
+            "finish_reason": None,
+            "error": "Error: Could not get a successful response from OpenAI API",
+        }
+
     # Check if failed for length reasons.
     choices = response.get("choices", [])
     if choices and all(choice.get("finish_reason", None) == 'length' for choice in choices):
@@ -275,20 +290,6 @@ def do_chat_completion(
             "error": "Error: The prompt elicits too-long responses",
         }
 
-    # TODO: Are there other reasons to try fallback models?
-
-    # If response is not valid, print an error message and return None
-    if (
-        response is None
-        or response["choices"] is None
-        or response["choices"][0] is None
-    ):
-        return None, {
-            "text": None,
-            "usage": None,
-            "finish_reason": None,
-            "error": "Error: Could not get a successful response from OpenAI API",
-        }
     return response, None
 
 def chat_completion(
